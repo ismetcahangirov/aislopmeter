@@ -7,12 +7,12 @@
     "source": "github"
   },
   "websiteUrl": "https://aislopmeter.netlify.app",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "aislopmeter",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "transport": {
         "type": "stdio"
       },
