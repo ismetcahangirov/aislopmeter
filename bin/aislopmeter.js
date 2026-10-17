@@ -12,7 +12,7 @@ Usage
   aislopmeter mcp                    run as an MCP server (stdio) for Claude, Cursor, Gemini CLI…
 
 Options
-  --pages <n>         URL: scan up to n pages via internal links (max 10)
+  --pages <n|all>     URL: how many pages to crawl (default 30, all = up to 200, 1 = only this page)
   --render <mode>     URL: auto | always | never  (uses your installed Chrome/Edge)
   --ignore <a,b>      folder: sub-paths to skip
   --include-ui        folder: also scan components/ui
@@ -26,7 +26,8 @@ Options
   -h, --help          print this help
 
 Examples
-  npx aislopmeter https://example.com --pages 5
+  npx aislopmeter https://example.com              # crawls up to 30 pages
+  npx aislopmeter https://example.com --pages all --open
   npx aislopmeter ./my-next-app --plan --lang tr
   npx aislopmeter ./dist/index.html --fail-above 40
 `;
@@ -43,7 +44,7 @@ function parse(argv) {
     else if (a === '--html') o.html = true;
     else if (a === '--open') { o.html = true; o.open = true; }
     else if (a === '--include-ui') o.includeUi = true;
-    else if (a === '--pages') o.pages = +val();
+    else if (a === '--pages') { const v = val(); o.pages = v === 'all' ? 'all' : +v; }
     else if (a === '--render') o.render = val();
     else if (a === '--lang') o.lang = val();
     else if (a === '--ignore') o.ignore = String(val() || '').split(',').filter(Boolean);
@@ -57,7 +58,7 @@ function parse(argv) {
 const o = parse(process.argv.slice(2));
 const fail = (msg) => { console.error(`aislopmeter: ${msg}`); process.exit(2); };
 if ('failAbove' in o && !Number.isFinite(o.failAbove)) fail('--fail-above needs a number');
-if ('pages' in o && !(Number.isInteger(o.pages) && o.pages >= 1 && o.pages <= 10)) fail('--pages needs a whole number from 1 to 10');
+if ('pages' in o && o.pages !== 'all' && !(Number.isInteger(o.pages) && o.pages >= 1 && o.pages <= 200)) fail('--pages needs a whole number from 1 to 200, or all');
 if ('render' in o && !['auto', 'always', 'never'].includes(o.render)) fail('--render must be auto, always or never');
 if ('lang' in o && !['en', 'tr'].includes(o.lang)) fail('--lang must be en or tr');
 if (o.version) { console.log(VERSION); process.exit(0); }
@@ -70,7 +71,10 @@ if (o._[0] === 'mcp') {
 } else {
   try {
     const lang = o.lang === 'tr' ? 'tr' : 'en';
-    const r = await scanTarget(o._[0], { pages: o.pages, render: o.render, ignore: o.ignore, includeUi: o.includeUi });
+    // progress on stderr, so --json output stays clean
+    const onPage = process.stderr.isTTY ? (p, done, total) => process.stderr.write(`\r\x1b[K${done}/${total} ${p.path.slice(0, 70)}`) : undefined;
+    const r = await scanTarget(o._[0], { pages: o.pages, render: o.render, ignore: o.ignore, includeUi: o.includeUi, onPage, budgetMs: 600000 });
+    if (onPage) process.stderr.write('\r\x1b[K');
     if (o.json) {
       const out = o.plan ? { ...r, plan: buildRescuePlan(r) } : r;
       console.log(JSON.stringify(out, null, 2));

@@ -20,16 +20,32 @@ export function buildContext(C, { now = new Date() } = {}) {
   const sources = C.sources || [{ file: null, content: C.raw || '', lineAt: () => null }];
   return {
     C, now, text, lines, words, W: words.length, proseLines, sentences, lang,
-    loTR: lowTR(text), loEN: lowEN(text),
+    // a short phrase in quotation marks is being talked about, not used: 'avoid words like "seamless"'
+    loTR: lowTR(stripMentions(text)), loEN: lowEN(stripMentions(text)),
     per1k: (n) => (words.length ? (n / words.length) * 1000 : 0),
     project: C.kind === 'project',
     sources,
     classTokens: C.classes.flatMap((c) => c.value.split(/\s+/).filter(Boolean).map((tok) => ({ tok, loc: c.loc }))),
     cssText: C.css.map((c) => c.text).join('\n'),
+    vars: cssVarMap(C.css.map((c) => c.text).join('\n')),
+    jsText: C.jsText || '',
   };
 }
 
 const MAXLOC = 8;
+// CSS custom properties: the first definition wins (that is the default theme)
+function cssVarMap(css) {
+  const m = new Map();
+  for (const x of css.matchAll(/(--[\w-]+)\s*:\s*([^;{}]{1,200})/g)) if (!m.has(x[1])) m.set(x[1], x[2].trim());
+  return m;
+}
+function resolveVars(str, vars, depth = 0) {
+  if (depth > 4 || !str.includes('var(')) return str;
+  return resolveVars(str.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*([^()]+))?\)/g, (a, n, fb) => (vars.has(n) ? vars.get(n) : fb || a)), vars, depth + 1);
+}
+function stripMentions(text) {
+  return text.replace(/(["“«‘])([^"“”«»‘’\n]{1,80})(["”»’])/g, (m, a, inner, b) => (inner.trim().split(/\s+/).length <= 8 ? ' ' : m));
+}
 const locOf = (item, snippet) => (item && item.loc ? { file: item.loc.file, line: item.loc.line, snippet: clip(snippet ?? item.text ?? '', 90) } : null);
 const locs = (arr) => {
   const seen = new Set();
@@ -247,7 +263,8 @@ const content = [
     const person = T.match(/(?<![\p{L}])\p{Lu}\p{Ll}{1,30} \p{Lu}\p{Ll}{1,30},?\s?(?:[-–—,]\s?)?(?:[Kk]urucu(?:su)?|[Ff]ounder|[Cc]o-founder|CEO|CTO|[Şş]ef|[Uu]sta|[Ee]ditör|[Yy]azar|[Dd]irektör|[Mm]üdür|[Oo]wner|[Ss]ahibi|[Cc]hef|[Dd]esigner|[Tt]asarımcı|[Ee]ngineer|[Mm]ühendis)/u);
     const stockNames = /john doe|jane doe|john smith|jane smith|sarah johnson|michael chen|emily rodriguez|david kim|jessica lee|alex thompson|sarah chen|michael brown|emily davis/i;
     const fakePeople = findAll(ctx, LX.AVATAR_HOSTS, 1).length > 0;
-    if (person && !stockNames.test(person[0]) && !fakePeople) out.push(['person', -2, t('Named person with a role', 'İsmi ve rolü belli kişi'), person[0]]);
+    const notName = /\b(?:Üniversitesi|Üniversite|Fakültesi|Bölümü|Yazılım|Bilgisayar|Mühendisliği|Lisesi|Şirketi|Teknoloji|Software|Senior|Junior|Lead|Full|Stack|University|College|School|Engineering|Development|Design|Digital|Solutions|Studio|Agency|Team|Data|Web)\b/;
+    if (person && !stockNames.test(person[0]) && !notName.test(person[0]) && !fakePeople) out.push(['person', -2, t('Named person with a role', 'İsmi ve rolü belli kişi'), person[0]]);
     const hours = T.match(/\d{1,2}[:.]\d{2}\s?[-–]\s?\d{1,2}[:.]\d{2}/);
     if (hours) out.push(['hours', -1, t('Opening hours', 'Çalışma saatleri'), hours[0]]);
     const price = T.match(/[₺$€£]\s?\d[\d.,]*|\d[\d.,]*\s?(?:TL|₺|€)(?![\p{L}])/u);
@@ -532,6 +549,35 @@ const language = [
       fix: t('Mix short and long sentences.', 'Kısa ve uzun cümleleri karıştırın.'),
     };
   },
+  function headlineFormula(ctx) {
+    const strip = (x) => x.replace(/\p{Extended_Pictographic}|[️‍]/gu, '').replace(/\s+/g, ' ').trim();
+    const heads = ctx.C.headings.filter((h) => h.level <= 2).map((h) => ({ ...h, text: strip(h.text) })).filter((h) => h.text && wordsOf(h.text).length <= 14);
+    const hits = heads.filter((h) => LX.HEADLINE_FORMULA.some((re) => re.test(h.text)));
+    if (!hits.length) return null;
+    const h1 = hits.some((h) => h.level === 1);
+    return {
+      id: 'headline-formula', cat: 'language', pts: Math.min(5, (h1 ? 2.5 : 1) + (hits.length - 1) * 0.75), effort: 'rewrite', needsFacts: true,
+      title: t('Headline from the template', 'Şablondan çıkmış başlık'),
+      detail: t('"Supercharge your…", "…, reimagined", "Your all-in-one…": headline formulas that promise a change without naming one thing the product does.', '"…nizi güçlendirin", "…yeniden tanımlıyoruz", "Hepsi tek platformda": ürünün yaptığı tek bir şeyi söylemeden değişim vaat eden başlık kalıpları.'),
+      evidence: uniq(hits.map((h) => h.text)).slice(0, 4),
+      locations: locs(hits.map((h) => locOf(h))),
+      fix: t('Write the headline as a plain statement of what it does and for whom, with one concrete detail.', 'Başlığı ne yaptığını ve kimin için olduğunu tek somut detayla söyleyen düz bir cümle olarak yazın.'),
+    };
+  },
+
+  function stockMicrocopy(ctx) {
+    const lo = ' ' + lowEN(ctx.text) + ' ' + lowTR(ctx.text) + ' ';
+    const found = LX.STOCK_MICROCOPY.filter((p) => new RegExp(`(?<![\\p{L}])${reEsc(p)}(?![\\p{L}])`, 'u').test(lo));
+    if (found.length < 4) return null;
+    return {
+      id: 'stock-microcopy', cat: 'language', pts: Math.min(4, (found.length - 3) * 0.75 + 1), effort: 'rewrite',
+      title: t('Stock landing-page microcopy', 'Hazır açılış sayfası kalıpları'),
+      detail: t(`${found.length} phrases every generated landing page carries ("Get started", "No credit card required", "Trusted by", "All rights reserved").`, `Her üretilmiş açılış sayfasında olan ${found.length} kalıp ("Hemen başla", "Kredi kartı gerekmez", "Güvenenler", "Tüm hakları saklıdır").`),
+      evidence: found.slice(0, 10),
+      locations: locs(copyWith(ctx, found).map((w) => locOf(w.item))),
+      fix: t('Rename each button by what happens next, and cut reassurance lines that every competitor also says.', 'Her butonu tıklayınca ne olacağına göre adlandırın, her rakibin de söylediği güven cümlelerini çıkarın.'),
+    };
+  },
 ];
 
 /* ================= TEMPLATE DESIGN ================= */
@@ -543,7 +589,7 @@ const design = [
     const L = [];
     for (const c of ctx.C.css) {
       for (const m of c.text.matchAll(/(?:linear|radial|conic)-gradient\(([^;{}]{0,400})\)/gi)) {
-        if (colorsIn(m[1]).some(isPurple)) { ev.push(clip(m[0], 80)); L.push(locOf(c, m[0])); }
+        if (colorsIn(resolveVars(m[1], ctx.vars)).some(isPurple)) { ev.push(clip(m[0], 80)); L.push(locOf(c, m[0])); }
       }
     }
     for (const c of ctx.C.classes) {
@@ -582,7 +628,11 @@ const design = [
     const re = /^(?:[\w-]+:)*(?:backdrop-blur(?:-\w+)?|blur-(?:2xl|3xl|\[\d+px\])|shadow-(?:purple|violet|indigo|fuchsia|pink|cyan|blue|sky|emerald)-\d{3}(?:\/\d+)?|shadow-\[0_0_[^\]]+\]|drop-shadow-\[0_0_[^\]]+\]|animate-(?:pulse|ping|glow|shimmer|blob))$/;
     const toks = ctx.classTokens.filter((x) => re.test(x.tok));
     const css = ctx.C.css.flatMap((c) => [...c.text.matchAll(/backdrop-filter\s*:[^;]+|radial-gradient\(/gi)].map((m) => ({ tok: m[0].toLowerCase(), loc: c.loc })));
-    const all = [...toks, ...css];
+    // coloured glows: box-shadow: 0 0 20px <accent>
+    const glow = ctx.C.css.flatMap((c) => [...c.text.matchAll(/(?:box|text)-shadow\s*:\s*0(?:px)?\s+0(?:px)?\s+(\d{1,3})px(?:\s+\d+px)?\s+([^;}]+)/gi)]
+      .filter((m) => +m[1] >= 8 && (colorsIn(resolveVars(m[2], ctx.vars)).some((x) => x.s >= 35) || /var\(--[\w-]*(?:glow|accent|primary|neon)/i.test(m[2])))
+      .map((m) => ({ tok: `glow ${m[1]}px`, loc: c.loc })));
+    const all = [...toks, ...css, ...glow];
     if (all.length < 2) return null;
     return {
       id: 'glow-glass', cat: 'design', pts: Math.min(4, all.length * 0.6), effort: 'redesign',
@@ -642,6 +692,18 @@ const design = [
     const dark = ctx.classTokens.filter((x) => /^bg-(?:gray|zinc|slate|neutral|stone)-(?:900|950)$|^bg-black$/.test(x.tok));
     const greyText = ctx.classTokens.filter((x) => /^text-(?:gray|zinc|slate|neutral)-(?:400|500)$/.test(x.tok));
     const hasLight = ctx.classTokens.some((x) => /^dark:/.test(x.tok)) || /prefers-color-scheme/.test(ctx.cssText);
+    // hand-written CSS: what colour is the page by default?
+    const bodyBg = (ctx.cssText.match(/(?:^|[}\s,])(?:body|html|:root)\s*\{[^}]*background(?:-color)?\s*:\s*([^;}]+)/i) || [])[1];
+    const bgHsl = bodyBg ? colorsIn(resolveVars(bodyBg, ctx.vars))[0] : null;
+    if (bgHsl && bgHsl.l <= 9 && !/prefers-color-scheme/.test(ctx.cssText)) {
+      return {
+        id: 'perma-dark', cat: 'design', pts: 2.5, effort: 'redesign',
+        title: t('Dark by default, for no reason', 'Sebepsiz yere varsayılan karanlık'),
+        detail: t('The page opens near-black whatever the visitor\'s setting. One of the most common looks on AI-built sites; a theme toggle does not change the first impression.', 'Sayfa ziyaretçinin ayarından bağımsız olarak siyaha yakın açılıyor. AI ile yapılmış sitelerin en yaygın görünümlerinden; tema düğmesi ilk izlenimi değiştirmiyor.'),
+        evidence: [clip(`background: ${bodyBg.trim()}`, 60)],
+        fix: t('Follow prefers-color-scheme, or choose dark only if the subject calls for it (night, film, code). If it stays dark, use 3-4 surface levels and body text at 7:1 contrast.', 'prefers-color-scheme ayarını izleyin ya da koyu temayı yalnızca konu gerektiriyorsa seçin (gece, film, kod). Koyu kalacaksa 3-4 yüzey seviyesi ve 7:1 kontrastlı gövde metni kullanın.'),
+      };
+    }
     if (dark.length < 1 || greyText.length < 3 || hasLight) return null;
     return {
       id: 'perma-dark', cat: 'design', pts: 3, effort: 'redesign',
@@ -683,8 +745,13 @@ const design = [
   function motionEverywhere(ctx) {
     const reveal = findAll(ctx, /whileInView|data-aos=["']fade|\banimate-(?:fade-in|fade-up|slide-up|slide-in)\b|\.in-view\b|initial=\{\{\s*opacity:\s*0/g, 40);
     const hover = ctx.classTokens.filter((x) => /^hover:(?:scale-1\d\d|-translate-y-\d|shadow-(?:xl|2xl))$/.test(x.tok));
+    // the same in hand-written CSS: fade-up keyframes on many elements, hover lifts
+    for (const c of ctx.C.css) {
+      if (/animation(?:-name)?\s*:[^;]*\b(?:fade-?in-?up|fade-?up|slide-?up|slide-?in-?up|reveal|fadeIn)\b/i.test(c.text)) reveal.push({ match: 'animation: fadeInUp', loc: c.loc });
+      if (/:hover[^{]*\{[^}]*transform\s*:\s*(?:translateY\(\s*-\d|scale\(1\.0[3-9]|scale\(1\.1)/i.test(c.text)) hover.push({ tok: ':hover translateY/scale', loc: c.loc });
+    }
     const reduced = /prefers-reduced-motion|motion-reduce|useReducedMotion/.test(ctx.cssText + ctx.sources.map((s) => s.content).join(' ').slice(0, 400000));
-    const n = (reveal.length >= 3 ? 1 : 0) + (hover.length >= 4 ? 1 : 0);
+    const n = (reveal.length >= 3 ? 1 : 0) + (hover.length >= (hover.some((h) => !h.tok.startsWith('hover:')) ? 2 : 4) ? 1 : 0);
     if (!n) return null;
     return {
       id: 'motion-everywhere', cat: 'design', pts: n * 1.5 + (reduced ? 0 : 1), effort: 'redesign',
@@ -698,12 +765,16 @@ const design = [
 
   function gimmickEffects(ctx) {
     const hits = findAll(ctx, LX.GIMMICK_COMPONENTS, 20);
+    for (const [name, re] of LX.GIMMICK_CODE) {
+      const f = findAll(ctx, new RegExp(re.source, 'gi'), 1);
+      if (f.length) hits.push({ ...f[0], m: [f[0].match, name] });
+    }
     if (!hits.length) return null;
     const names = uniq(hits.map((h) => h.m[1]));
     return {
       id: 'gimmick-effects', cat: 'design', pts: Math.min(6, names.length * 2.5), effort: 'redesign',
       title: t('Effect-kit components', 'Efekt kiti bileşenleri'),
-      detail: t('Meteors, beams, sparkles and aurora backgrounds from copy-paste effect libraries.', 'Kopyala-yapıştır efekt kütüphanelerinden meteor, ışın, parıltı ve aurora arka planları.'),
+      detail: t('Typing effects, custom cursors, particles, floating shapes, meteors and beams: effects pasted in because they were easy to add.', 'Daktilo efekti, özel imleç, parçacıklar, uçuşan şekiller, meteor ve ışınlar: eklemesi kolay olduğu için yapıştırılmış efektler.'),
       evidence: names,
       locations: locs(hits.map((h) => h.loc && { ...h.loc, snippet: clip(h.match, 40) })),
       fix: t('Easy to add is not a reason to include. Remove them; put the budget into real imagery or one interactive demo of the product.', 'Eklemesi kolay olması eklemek için sebep değil. Kaldırın; o emeği gerçek görsellere ya da ürünün tek bir etkileşimli demosuna verin.'),
@@ -771,6 +842,114 @@ const design = [
       fix: t('Remove them unless the badge carries real news with a date.', 'Rozet tarihli gerçek bir haber taşımıyorsa kaldırın.'),
     };
   },
+  function landingTemplate(ctx) {
+    const H = ctx.C.headings.map((h) => lowEN(h.text));
+    const T = ' ' + lowEN(ctx.text) + ' ';
+    const has = (re) => re.test(T);
+    const head = (re) => H.some((h) => re.test(h));
+    const parts = [
+      ['hero with two buttons', ctx.C.ctas.slice(0, 6).filter((c) => LX.GENERIC_CTA.some((re) => re.test(c.text.trim()))).length >= 2],
+      ['logo strip', has(/trusted by|used by (?:teams|companies)|loved by|powering (?:teams|companies)|güvenen|tercih ed/)],
+      ['feature grid', ctx.C.cardGroups + ctx.C.featureArrays >= 1 || head(/^(?:features|key features|everything you need|özellikler)/)],
+      ['how it works', head(/how it works|nasıl çalışır|get started in|3 (?:simple|easy) steps|üç adım/) || /\bstep (?:1|one)\b[\s\S]{0,400}\bstep (?:2|two)\b/i.test(T)],
+      ['testimonials', head(/testimonial|what (?:our )?(?:customers|clients|users|people) (?:say|are saying)|loved by|wall of love|yorumlar|müşterilerimiz ne diyor/) || /★★★★★|⭐⭐⭐⭐⭐/.test(T)],
+      ['stats row', (T.match(/\b\d{1,3}(?:[.,]\d)?\s?(?:k|m|b)?\+|\b99(?:\.9+)?%|\b24\/7\b/gi) || []).length >= 3],
+      ['three pricing plans', /most popular|en popüler|best value/.test(T) || (/\b(?:starter|basic|free)\b/.test(T) && /\bpro\b/.test(T) && /\b(?:enterprise|business|team)\b/.test(T) && /\/\s?(?:mo|month|ay)\b/.test(T))],
+      ['FAQ accordion', head(/^(?:faq|faqs|frequently asked|sıkça sorulan|sss)/) || /data-radix-accordion|data-state=["'](?:open|closed)["'][^>]*accordion/i.test(ctx.sources.map((x) => x.content).join(' ').slice(0, 600000))],
+      ['closing call to action', head(/^ready to|get started today|start (?:building|your) |join (?:thousands|us)|hemen başla|başlamaya hazır/)],
+      ['four-column footer', ['product', 'company', 'resources', 'legal'].filter((w) => H.some((h) => h === w) || new RegExp(`(?:^|\\n)${w}(?:\\n|$)`, 'i').test(ctx.text)).length >= 3 || /all rights reserved|tüm hakları saklıdır/.test(T)],
+    ];
+    const got = parts.filter((p) => p[1]).map((p) => p[0]);
+    if (got.length < 5) return null;
+    return {
+      id: 'landing-template', cat: 'design', pts: Math.min(7, 2 + (got.length - 5) * 1.25), effort: 'redesign',
+      title: t('The standard landing-page template', 'Standart açılış sayfası şablonu'),
+      detail: t(`${got.length} of the 10 sections every generated landing page has, in the usual order. The page reads as the template with the product name swapped in.`, `Her üretilmiş açılış sayfasındaki 10 bölümden ${got.length} tanesi, alışılmış sırayla. Sayfa, ürün adı değiştirilmiş şablon gibi okunuyor.`),
+      evidence: got,
+      fix: t('Keep only the sections your visitors need to decide, and give each a form that fits its content: a real screenshot, a comparison table, one strong customer story instead of six quotes.', 'Sadece ziyaretçinin karar vermesi için gereken bölümleri bırakın ve her birine içeriğine uyan bir biçim verin: gerçek ekran görüntüsü, karşılaştırma tablosu, altı yorum yerine tek güçlü müşteri hikâyesi.'),
+    };
+  },
+
+  function portfolioTemplate(ctx) {
+    const H = ctx.C.headings.map((h) => h.text.replace(/\s+/g, ' ').trim());
+    const navs = ctx.C.links.map((a) => a.text.trim()).filter((x) => LX.PORTFOLIO_SECTIONS.test(x));
+    const parts = [
+      ['"Hi, I\'m" greeting', /(?:^|\n)(?:hi|hello|hey)[,!]? i(?:'|’)?m\b|(?:^|\n)merhaba,? ben\b/i.test(ctx.text) || H.some((h) => /^(?:hi|hello|merhaba)[,!]?\s*(?:i(?:'|’)?m|ben)?$/i.test(h))],
+      ['rotating job titles', /isDeleting|new Typed\(|typewriter|class=["'][^"']*\btyp(?:ing|ed)\b/i.test(ctx.jsText + ctx.sources.map((x) => x.content).join(' ').slice(0, 400000))],
+      ['standard section menu', uniq(navs.map((x) => x.toLowerCase())).length >= 4 || H.filter((h) => LX.PORTFOLIO_SECTIONS.test(h)).length >= 4],
+      ['"X+ years" stat cards', /\b\d+(?:[.,]\d)?\+\s*(?:years?|yıl)/i.test(ctx.text)],
+      ['skill category cards', /(?:^|\n)(?:frontend|backend|tools|devops|ai (?:&|and) data|languages)(?:\n|$)/i.test(ctx.text) && /(?:^|\n)(?:frontend)(?:\n|$)/i.test(ctx.text)],
+      ['glowing timeline', /timeline/i.test(ctx.cssText) || ctx.C.classes.some((c) => /timeline/.test(c.value))],
+    ];
+    const got = parts.filter((p) => p[1]).map((p) => p[0]);
+    if (got.length < 3) return null;
+    // a portfolio with no work in it: no screenshots, no project or code links
+    const imgs = ctx.C.images.filter((i) => !/\.svg(?:$|\?)|icon|logo|avatar|profile/i.test(i.src));
+    const workLinks = ctx.C.links.filter((a) => /github\.com\/[^/]+\/[^/?#]+|gitlab\.com|behance|dribbble|\/projects?\/|\/work\/|codepen|vercel\.app|netlify\.app|apps\.apple|play\.google/i.test(a.href));
+    const out = [];
+    if (!imgs.length && !workLinks.length) out.push({
+      id: 'no-work-shown', cat: 'content', pts: 5, effort: 'rewrite', needsFacts: true,
+      title: t('A portfolio with no work in it', 'İçinde iş olmayan bir portfolyo'),
+      detail: t('There is no project to look at: no screenshot, no live link, no repository. Skills are listed but nothing shows them.', 'Bakılacak bir proje yok: ekran görüntüsü, canlı link ya da kod deposu yok. Yetenekler sıralanmış ama hiçbiri gösterilmiyor.'),
+      evidence: ['0 project images, 0 project links'],
+      fix: t('Add two or three real projects: a screenshot, one line on the problem, what you built, the stack, and a link to the live site or the code.', 'İki üç gerçek proje ekleyin: ekran görüntüsü, problemi anlatan tek satır, ne yaptığınız, kullandığınız teknoloji ve canlı siteye ya da koda link.'),
+    });
+    out.push({
+      id: 'portfolio-template', cat: 'design', pts: Math.min(5, 1.5 + (got.length - 3) * 1.25), effort: 'redesign', needsFacts: true,
+      title: t('The standard developer-portfolio template', 'Standart geliştirici portfolyo şablonu'),
+      detail: t(`${got.length} parts of the portfolio every AI tool produces: greeting, typing job titles, About/Skills/Experience/Contact, "3+ years" cards, skill boxes, a glowing timeline.`, `Her AI aracının ürettiği portfolyonun ${got.length} parçası: selamlama, yazılıp silinen unvanlar, Hakkımda/Yetenekler/Deneyim/İletişim, "3+ yıl" kartları, yetenek kutuları, parlayan zaman çizelgesi.`),
+      evidence: got,
+      fix: t('Lead with your work: two or three projects with a screenshot, what you built, the stack and a link. Drop the typing effect and the skill boxes; let the projects show the skills.', 'İşinizle başlayın: ekran görüntüsü, ne yaptığınız, kullandığınız teknoloji ve link içeren iki üç proje. Daktilo efektini ve yetenek kutularını kaldırın; yetenekleri projeler göstersin.'),
+    });
+    return out;
+  },
+
+  function defaultPalette(ctx) {
+    const hexes = [];
+    for (const c of ctx.C.css) for (const m of c.text.matchAll(/#[0-9a-fA-F]{6}\b/g)) if (LX.TW_HEX.has(m[0].toLowerCase())) hexes.push({ hex: m[0].toLowerCase(), loc: c.loc });
+    const distinct = uniq(hexes.map((h) => h.hex));
+    const cls = uniq(ctx.classTokens.map((x) => x.tok.replace(/^(?:[\w-]+:)+/, '')).filter((x) => /^(?:text|bg|border|from|to|via|ring)-(?:slate|gray|zinc|neutral|blue|indigo|violet|purple)-\d{2,3}$/.test(x)));
+    const custom = /--(?:brand|color-brand|accent-\d|ink|paper)\b/.test(ctx.cssText);
+    const n = distinct.length + (cls.length >= 10 ? 3 : 0);
+    if (n < 5 || custom) return null;
+    return {
+      id: 'default-palette', cat: 'design', pts: n >= 9 ? 3 : 2, effort: 'redesign',
+      title: t('Tailwind\'s default colours', 'Tailwind\'in varsayılan renkleri'),
+      detail: t(`${distinct.length} colours copied straight from Tailwind\'s default palette (slate, purple-500, blue-500…)${cls.length >= 10 ? ` and ${cls.length} default colour classes` : ''}. Thousands of sites share exactly these values.`, `Tailwind\'in varsayılan paletinden doğrudan alınmış ${distinct.length} renk (slate, purple-500, blue-500…)${cls.length >= 10 ? ` ve ${cls.length} varsayılan renk sınıfı` : ''}. Binlerce site tam olarak bu değerleri paylaşıyor.`),
+      evidence: [...distinct.slice(0, 8), ...cls.slice(0, 4)],
+      locations: locs(hexes.map((h) => h.loc && { ...h.loc, snippet: h.hex })),
+      fix: t('Derive 4-6 colours from the subject (a photo, the product, the place), give them names, and use only those.', 'Konudan (bir fotoğraf, ürün, mekân) 4-6 renk türetin, onlara isim verin ve sadece onları kullanın.'),
+    };
+  },
+
+  function accentUnderline(ctx) {
+    const hits = ctx.C.css.filter((c) => /::?after\s*\{/.test(c.text) && /\bwidth\s*:\s*(?:[2-9]\d|1[0-2]\d)px/.test(c.text) && /\bheight\s*:\s*[2-6]px/.test(c.text) && /background/.test(c.text));
+    const tw = ctx.C.classes.filter((c) => /\bh-(?:0\.5|1|1\.5)\b/.test(c.value) && /\bw-(?:12|16|20|24)\b/.test(c.value) && /\bmx-auto\b/.test(c.value) && /\bbg-/.test(c.value));
+    if (!hits.length && tw.length < 2) return null;
+    return {
+      id: 'accent-underline', cat: 'design', pts: 1.5, effort: 'redesign',
+      title: t('Short coloured bar under each heading', 'Her başlığın altında kısa renkli çizgi'),
+      detail: t('A centred heading with a small accent bar under it, repeated for every section: the theme-template way to say "section starts here".', 'Ortalanmış başlık ve altında küçük renkli çizgi, her bölümde tekrar: hazır temaların "bölüm burada başlıyor" deme şekli.'),
+      evidence: hits.length ? [clip(hits[0].text.replace(/\s+/g, ' '), 80)] : [clip(tw[0].value, 60)],
+      locations: locs([...hits.map((c) => locOf(c, '::after')), ...tw.map((c) => locOf(c, c.value))]),
+      fix: t('Let spacing and type size mark sections. If a divider is needed, use one consistent rule across the page.', 'Bölümleri boşluk ve yazı boyutu ayırsın. Ayırıcı gerekiyorsa sayfa genelinde tek tutarlı bir çizgi kullanın.'),
+    };
+  },
+
+  function stockIcons(ctx) {
+    const lucide = ctx.C.classes.filter((c) => /\blucide(?:-[\w-]+)?\b/.test(c.value));
+    const sparkles = lucide.filter((c) => /lucide-sparkles?\b/.test(c.value)).length + findAll(ctx, /<Sparkles\b/g, 5).length;
+    const lib = findAll(ctx, /from\s+["']lucide-react["']/g, 1).length;
+    if (lucide.length < 6 && !(lib && sparkles) && !(lucide.length >= 3 && sparkles)) return null;
+    return {
+      id: 'stock-icons', cat: 'design', pts: sparkles ? 2 : 1.5, effort: 'redesign',
+      title: t('Every icon from the same stock set', 'Bütün ikonlar aynı hazır setten'),
+      detail: t(`${lucide.length || 'Many'} Lucide icons${sparkles ? ', including the ✨ Sparkles icon' : ''}: the default icon set of shadcn and of most AI builders.`, `${lucide.length || 'Çok sayıda'} Lucide ikonu${sparkles ? ', ✨ Sparkles ikonu dahil' : ''}: shadcn'in ve çoğu AI aracının varsayılan ikon seti.`),
+      evidence: uniq(lucide.map((c) => (c.value.match(/lucide-[\w-]+/) || ['lucide'])[0])).slice(0, 8),
+      locations: locs(lucide.map((c) => locOf(c, c.value))),
+      fix: t('Use fewer icons. Where one helps, pick or draw icons that show this product, or use a set with a character of its own.', 'Daha az ikon kullanın. Gerektiği yerde bu ürünü gösteren ikonlar seçin ya da çizin, ya da kendine özgü bir set kullanın.'),
+    };
+  },
 ];
 
 /* ================= UNFINISHED DETAILS ================= */
@@ -780,7 +959,9 @@ const finish = [
     // form hints like placeholder="Your name" are meant to be there
     const inAttr = (x) => {
       const src = x.m.input, i = x.m.index;
-      return /(?:placeholder|aria-placeholder)\s*=\s*["'{`][^"'`]{0,120}$/i.test(src.slice(Math.max(0, i - 140), i));
+      if (/(?:placeholder|aria-placeholder)\s*=\s*["'{`][^"'`]{0,120}$/i.test(src.slice(Math.max(0, i - 140), i))) return true;
+      // a mention in typographic quotes (“Lorem ipsum”) is text about placeholders, not one
+      return /[“«‘]$|&ldquo;$|&laquo;$/.test(src.slice(Math.max(0, i - 7), i)) && /^[^<\n]{0,4}[”»’]|^[^<\n]{0,4}&rdquo;/.test(src.slice(i + x.match.length, i + x.match.length + 12));
     };
     for (const [k, re, only] of LX.PLACEHOLDER) {
       if (only === 'page' && ctx.C.kind === 'project') continue;
@@ -1040,6 +1221,16 @@ const finish = [
       }
     }
     return res;
+  },
+  function clientShell(ctx) {
+    if (!ctx.C.serverShell) return null;
+    return {
+      id: 'client-shell', cat: 'finish', pts: 3, effort: 'replace',
+      title: t('Empty until JavaScript runs', 'JavaScript çalışana kadar boş'),
+      detail: t('The server sends an empty <div id="root"> and a script bundle; every word appears only after JavaScript runs. Search engines, link previews and slow phones see a blank page. It is also how most AI builders ship.', 'Sunucu boş bir <div id="root"> ve bir script paketi gönderiyor; her kelime JavaScript çalıştıktan sonra beliriyor. Arama motorları, link önizlemeleri ve yavaş telefonlar boş sayfa görüyor. Çoğu AI aracı da böyle yayınlıyor.'),
+      evidence: ['<div id="root"></div>'],
+      fix: t('Prerender or server-render the public pages (Vite SSG, Next.js static export, Astro), or at least put the title, description and main text in the HTML.', 'Herkese açık sayfaları önceden ya da sunucuda oluşturun (Vite SSG, Next.js static export, Astro) ya da en azından başlığı, açıklamayı ve ana metni HTML\'e koyun.'),
+    };
   },
 ];
 

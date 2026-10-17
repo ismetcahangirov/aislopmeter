@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Slop Meter: measure the AI slop on your website, then fix it</title>
+<meta name="description" content="Open-source MCP server and CLI. Scans every page of a website or a project folder, scores AI slop from 0 to 100 and gives step-by-step fixes with file and line. Runs on your computer, free.">
+<link rel="canonical" href="https://aislopmeter.netlify.app/">
+<link rel="alternate" hreflang="en" href="https://aislopmeter.netlify.app/?lang=en">
+<link rel="alternate" hreflang="tr" href="https://aislopmeter.netlify.app/?lang=tr">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aislopmeter.netlify.app/">
+<meta property="og:title" content="AI Slop Meter">
+<meta property="og:description" content="How much of your website is AI slop? Scan every page, get a score and a line-by-line to-do list your own AI can carry out.">
+<meta property="og:image" content="https://aislopmeter.netlify.app/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+/* A measuring instrument, not a marketing page: mineral-glass paper, slate ink,
+   a fuchsin stain for slop and a chlorophyll green for "clean". One moving part: the needle. */
+:root{
+  --paper:#e9eeec; --sheet:#f7faf9; --ink:#14232b; --ink-2:#3b4d55; --muted:#5d6f76; --rule:#c9d5d2;
+  --stain:#ad2357; --clean:#2a7653; --blue:#1f4e8c;
+  --display:'Familjen Grotesk','Helvetica Neue',Arial,sans-serif;
+  --text:'Source Serif 4',Georgia,serif;
+  --code:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --paper:#0f1719; --sheet:#152024; --ink:#e3ebe9; --ink-2:#b9c7c8; --muted:#90a3a5; --rule:#2a3c40;
+  --stain:#f0648f; --clean:#5fc896; --blue:#8ab4ec; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.6 var(--text);font-optical-sizing:auto}
+a{color:var(--blue);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+img{max-width:100%;height:auto;display:block}
+code,pre{font-family:var(--code)}
+h1,h2,h3{font-family:var(--display);line-height:1.08;margin:0;text-wrap:balance;letter-spacing:-.01em}
+p{margin:0 0 1em}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:max(20px,env(safe-area-inset-left))}
+html[data-lang=en] body [lang=tr],html[data-lang=tr] body [lang=en]{display:none!important}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:18px}
+.mark{display:flex;align-items:center;gap:10px;font:700 19px/1 var(--display);color:var(--ink);text-decoration:none}
+.mark svg{width:28px;height:28px}
+.top nav{display:flex;align-items:center;gap:18px;font:500 15px var(--display)}
+.top nav a{color:var(--ink-2);text-decoration:none}
+.top nav a:hover{color:var(--ink);text-decoration:underline}
+.langs{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.langs button{font:600 13px/1 var(--display);border:0;background:none;color:var(--muted);padding:7px 10px;cursor:pointer}
+.langs button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+
+/* hero: the instrument */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:56px;align-items:center;padding-block:48px 72px}
+.hero h1{font-size:clamp(44px,6.4vw,84px);font-weight:700}
+.lede{font-size:21px;color:var(--ink-2);margin:22px 0 30px;max-width:34em}
+.cmd{display:flex;align-items:stretch;border:1.5px solid var(--ink);border-radius:8px;background:var(--sheet);max-width:640px}
+.cmd code{flex:1;min-width:0;padding:14px 16px;font-size:14.5px;line-height:1.5;overflow-x:auto;white-space:nowrap}
+.cmd button{font:600 15px var(--display);border:0;border-left:1.5px solid var(--ink);background:var(--ink);color:var(--paper);padding:0 18px;cursor:pointer;border-radius:0 6px 6px 0;min-width:96px}
+.cmd button:hover{background:var(--ink-2)}
+.cmd-note{font-size:15.5px;color:var(--muted);margin-top:12px}
+.cmd-note code{font-size:13.5px;color:var(--ink-2);overflow-wrap:anywhere}
+
+.meter{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:26px 26px 22px}
+.meter svg{width:100%;height:auto;display:block}
+.scale-tick{stroke:var(--muted);stroke-width:1.4}
+.scale-num{font:500 12px var(--display);fill:var(--muted)}
+.band{fill:none;stroke-width:14}
+.needle{stroke:var(--ink);stroke-width:3.2;stroke-linecap:round;transform-origin:200px 200px;transition:transform 1.4s cubic-bezier(.3,1.35,.5,1)}
+.hub{fill:var(--ink)}
+.read{font:700 64px var(--display);fill:var(--ink);font-variant-numeric:tabular-nums}
+.read-label{font:500 15px var(--display);fill:var(--muted)}
+.switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.switch button{font:600 15px var(--display);padding:11px 12px;border-radius:8px;border:1px solid var(--rule);background:transparent;color:var(--ink-2);cursor:pointer;text-align:left}
+.switch button b{float:right;font-variant-numeric:tabular-nums}
+.switch button[aria-pressed=true]{border-color:var(--ink);color:var(--ink);background:var(--paper)}
+.switch .before b{color:var(--stain)} .switch .after b{color:var(--clean)}
+.meter figcaption{font-size:15px;color:var(--muted);margin-top:12px}
+
+/* specimen: the before/after page */
+section{padding-block:72px;border-top:1px solid var(--rule)}
+.sec-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:48px;align-items:end;margin-bottom:34px}
+.sec-head h2{font-size:clamp(32px,4vw,48px)}
+.sec-head p{color:var(--ink-2);margin:0;max-width:36em}
+.specimen{position:relative;border:1px solid var(--rule);border-radius:12px;overflow:hidden;background:var(--sheet)}
+.specimen img{width:100%;aspect-ratio:1280/860;object-fit:cover;object-position:top}
+.specimen .after-img{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+.specimen[data-state=after] .after-img{opacity:1}
+.specimen-note{font-size:15px;color:var(--muted);margin-top:12px}
+
+/* what it measures: the 100 points */
+.points{display:flex;height:22px;border-radius:5px;overflow:hidden;margin:0 0 6px}
+.points i{display:block;height:100%}
+.points i+i{border-left:2px solid var(--paper)}
+.areas{margin:22px 0 0;padding:0;list-style:none}
+.areas li{display:grid;grid-template-columns:200px 84px minmax(0,1fr);gap:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.areas li:last-child{border-bottom:1px solid var(--rule)}
+.areas h3{font-size:21px}
+.areas .max{font:700 21px var(--display);font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.areas .max small{font-weight:500;font-size:14px;color:var(--muted)}
+.areas p{margin:0;color:var(--ink-2)}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:9px;vertical-align:1px}
+.fine{font-size:16px;color:var(--muted);margin-top:22px;max-width:46em}
+
+/* how it works: a real sequence */
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps>li{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:48px;align-items:start;padding:34px 0;border-top:1px solid var(--rule);counter-increment:s}
+.steps>li:first-child{border-top:0;padding-top:0}
+.steps h3{font-size:26px;display:flex;gap:14px;align-items:baseline}
+.steps h3::before{content:counter(s);font:700 15px/30px var(--display);width:30px;height:30px;flex:none;text-align:center;border-radius:50%;border:1.5px solid var(--ink)}
+.steps p{color:var(--ink-2);margin-top:12px}
+.shot{border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--sheet);box-shadow:0 1px 0 var(--rule)}
+.compare{width:100%;border-collapse:collapse;font-size:16px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.compare th,.compare td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--rule)}
+.compare th{font:600 14px var(--display);color:var(--muted);text-align:right}
+.compare th:first-child{text-align:left}
+.compare td.n{font:600 16px var(--display);font-variant-numeric:tabular-nums;text-align:right}
+.compare tr:last-child td{border-bottom:0}
+.down{color:var(--clean)}
+
+/* install */
+.install{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.install h3{font-size:20px;margin-bottom:10px}
+.install p{font-size:16px;color:var(--ink-2)}
+pre{margin:0;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55;overflow-x:auto}
+.ask{font-size:20px;line-height:1.5;border-left:3px solid var(--clean);padding:4px 0 4px 18px;margin:8px 0 0;max-width:34em}
+
+/* limits */
+.limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px}
+.limits h3{font-size:20px;margin-bottom:8px}
+.limits p{font-size:16.5px;color:var(--ink-2);margin:0}
+
+footer{border-top:1px solid var(--rule);padding-block:30px 48px;font-size:15.5px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
+
+@media (max-width:900px){
+  .hero,.sec-head,.steps>li,.install,.limits{grid-template-columns:minmax(0,1fr);gap:28px}
+  .hero{padding-block:24px 56px}
+  .areas li{grid-template-columns:1fr auto;gap:6px 16px}
+  .areas li p{grid-column:1/-1}
+  .top nav a.hide-s{display:none}
+}
+@media (max-width:520px){
+  body{font-size:17px}
+  .lede{font-size:19px}
+  .cmd{flex-direction:column}
+  .cmd button{border-left:0;border-top:1.5px solid var(--ink);border-radius:0 0 6px 6px;padding:11px}
+  section{padding-block:56px}
+}
+@media (prefers-reduced-motion:reduce){.needle,.specimen .after-img{transition:none}}
+</style>
+</head>
+<body>
+<header class="wrap top">
+  <a class="mark" href="./" aria-label="AI Slop Meter">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M3 20a11 11 0 0 1 22 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M14 9v2.5M6.5 12.5l1.6 1.6M21.5 12.5l-1.6 1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 20l5.5-6.5" stroke="#ad2357" stroke-width="2.4" stroke-linecap="round"/><circle cx="14" cy="20" r="2.4" fill="#ad2357"/></svg>
+    AI Slop Meter
+  </a>
+  <nav>
+    <a class="hide-s" href="#how"><span lang="en">How it works</span><span lang="tr">Nasıl çalışır</span></a>
+    <a class="hide-s" href="#install"><span lang="en">Install</span><span lang="tr">Kurulum</span></a>
+    <a href="https://github.com/omergocmen/aislopmeter">GitHub</a>
+    <div class="langs" role="group" aria-label="Language / Dil">
+      <button type="button" data-set-lang="tr" aria-pressed="false">TR</button>
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+    </div>
+  </nav>
+</header>
+
+<main>
+<div class="wrap hero">
+  <div>
+    <h1><span lang="en">How much of your website is AI slop?</span><span lang="tr">Sitenin ne kadarı AI slop?</span></h1>
+    <p class="lede" lang="en">AI Slop Meter reads every page, scores it from 0 to 100 and tells you what to change, down to the file and line. Then your own AI makes the changes.</p>
+    <p class="lede" lang="tr">AI Slop Meter sitenin her sayfasını okur, 0'dan 100'e puanlar ve neyi değiştirmen gerektiğini dosya ve satırına kadar söyler. Değişiklikleri de kendi yapay zekân yapar.</p>
+    <div class="cmd">
+      <code id="cmd-main">claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp</code>
+      <button type="button" data-copy="cmd-main"><span lang="en">Copy</span><span lang="tr">Kopyala</span></button>
+    </div>
+    <p class="cmd-note" lang="en">That line is for Claude Code. Cursor, Claude Desktop and the rest are <a href="#install">below</a>. To try it once without installing: <code>npx -y github:omergocmen/aislopmeter https://your-site.com --open</code></p>
+    <p class="cmd-note" lang="tr">Bu satır Claude Code için. Cursor, Claude Desktop ve diğerleri <a href="#install">aşağıda</a>. Kurmadan bir kez denemek için: <code>npx -y github:omergocmen/aislopmeter https://siten.com --open --lang tr</code></p>
+  </div>
+
+  <figure class="meter" style="margin:0">
+    <svg viewBox="0 0 400 290" role="img" aria-labelledby="meter-read">
+      <path class="band" d="M60 200 A140 140 0 0 1 116.4 87.7" stroke="#2a7653" opacity=".85"/>
+      <path class="band" d="M116.4 87.7 A140 140 0 0 1 283.6 87.7" stroke="#c48a1e" opacity=".8"/>
+      <path class="band" d="M283.6 87.7 A140 140 0 0 1 340 200" stroke="#ad2357" opacity=".85"/>
+      <g id="ticks"></g>
+      <line class="needle" id="needle" x1="200" y1="200" x2="200" y2="78" style="transform:rotate(-90deg)"/>
+      <circle class="hub" cx="200" cy="200" r="9"/>
+      <text class="read" id="meter-read" x="200" y="282" text-anchor="middle">83</text>
+    </svg>
+    <div class="switch" role="group">
+      <button type="button" class="before" data-state="before" aria-pressed="true"><span lang="en">Before</span><span lang="tr">Önce</span> <b>83</b></button>
+      <button type="button" class="after" data-state="after" aria-pressed="false"><span lang="en">After</span><span lang="tr">Sonra</span> <b>1</b></button>
+    </div>
+    <figcaption lang="en">The NovaFlow demo page, scored before and after a rescue. Green is clean, red is heavy slop.</figcaption>
+    <figcaption lang="tr">NovaFlow örnek sayfasının kurtarmadan önceki ve sonraki skoru. Yeşil temiz, kırmızı yoğun slop.</figcaption>
+  </figure>
+</div>
+
+<section class="wrap" aria-labelledby="specimen-h">
+  <div class="sec-head">
+    <h2 id="specimen-h"><span lang="en">Same product, same facts</span><span lang="tr">Aynı ürün, aynı bilgiler</span></h2>
+    <p lang="en">Before: a page a site builder produced from one prompt. Purple gradient, emoji icons, three identical cards, "seamless" and "cutting-edge". Switch to after: the owner answered the plan's questions, and the page was rewritten with those answers.</p>
+    <p lang="tr">Önce: bir site aracının tek prompt'la ürettiği sayfa. Mor gradyan, emoji ikonlar, birbirinin aynı üç kart, "sorunsuz" ve "son teknoloji". Sonra: sahibi planın sorularını cevapladı, sayfa bu cevaplarla yeniden yazıldı.</p>
+  </div>
+  <figure class="specimen" id="specimen" data-state="before" style="margin:0">
+    <img src="img/before.png" width="1280" height="860" alt="The demo page before: purple gradient hero, emoji feature icons and generic claims.">
+    <img class="after-img" src="img/after.png" width="1280" height="860" alt="The demo page after: an invoice on the page, plain type, specific prices and named people." loading="lazy">
+  </figure>
+  <p class="specimen-note" lang="en">NovaFlow is a made-up product and its figures are fictional. Both pages are in the repo under <code>examples/novaflow</code>, so you can scan them yourself.</p>
+  <p class="specimen-note" lang="tr">NovaFlow uydurma bir ürün, rakamları da kurgu. İki sayfa da repoda <code>examples/novaflow</code> altında, kendin tarayabilirsin.</p>
+</section>
+
+<section class="wrap" aria-labelledby="measures-h">
+  <div class="sec-head">
+    <h2 id="measures-h"><span lang="en">Where the 100 points come from</span><span lang="tr">100 puan nereden geliyor</span></h2>
+    <p lang="en">More than 60 checks, each written from published research and design reviews, each with the evidence it found. It reads your stylesheets and scripts too. A page needs problems in several areas to score high, so a purple brand colour alone is never "slop".</p>
+    <p lang="tr">60'tan fazla kontrol var. Her biri yayımlanmış araştırmalardan ve tasarım incelemelerinden çıkarıldı, her biri bulduğu kanıtı gösteriyor. Stil ve script dosyalarını da okur. Yüksek skor için birden fazla alanda sorun olmalı; yani sadece mor bir marka rengi asla "slop" sayılmaz.</p>
+  </div>
+  <div class="points" aria-hidden="true">
+    <i style="width:30%;background:#ad2357"></i><i style="width:22%;background:#c84a76"></i><i style="width:28%;background:#3b4d55"></i><i style="width:15%;background:#6c8087"></i><i style="width:5%;background:#a3b3b5"></i>
+  </div>
+  <ul class="areas">
+    <li>
+      <h3><span class="swatch" style="background:#ad2357"></span><span lang="en">Substance</span><span lang="tr">İçerik özü</span></h3>
+      <span class="max">30 <small lang="en">points</small><small lang="tr">puan</small></span>
+      <p lang="en">Could this sentence sit on any other company's site? Counts prices, names, places, dates and claims you can check, against invented stats, stock-photo testimonials and countdowns that reset.</p>
+      <p lang="tr">Bu cümle başka bir şirketin sitesinde de durabilir mi? Fiyat, isim, yer, tarih ve doğrulanabilir iddiaları; uydurma istatistiklere, stok fotoğraflı yorumlara ve sıfırlanan geri sayımlara karşı tartar.</p>
+    </li>
+    <li>
+      <h3><span class="swatch" style="background:#c84a76"></span><span lang="en">Language</span><span lang="tr">Dil</span></h3>
+      <span class="max">22 <small lang="en">points</small><small lang="tr">puan</small></span>
+      <p lang="en">"Not just X, it's Y", lists of three, "unlock", "elevate", "in today's fast-paced world". English and Turkish word lists, measured per thousand words so one brand name does not count as a habit.</p>
+      <p lang="tr">"Sadece X değil, Y", üçlü listeler, "kilidini açın", "bir üst seviyeye taşıyın", "günümüzün hızla değişen dünyasında". İngilizce ve Türkçe kelime listeleri; bin kelimeye oranla ölçülür, tek bir marka adı alışkanlık sayılmaz.</p>
+    </li>
+    <li>
+      <h3><span class="swatch" style="background:#3b4d55"></span><span lang="en">Design</span><span lang="tr">Tasarım</span></h3>
+      <span class="max">28 <small lang="en">points</small><small lang="tr">puan</small></span>
+      <p lang="en">Purple-to-blue gradients, glowing panels, emoji used as icons, identical cards, Tailwind's default colours, the standard landing-page and portfolio templates, typing effects and custom cursors, and the newer defaults: cream with terracotta, acid green on black.</p>
+      <p lang="tr">Mordan maviye gradyanlar, parlayan paneller, ikon yerine emoji, birbirinin aynı kartlar, Tailwind'in varsayılan renkleri, standart açılış sayfası ve portfolyo şablonları, daktilo efektleri ve özel imleçler, bir de yeni varsayılanlar: krem üstüne kiremit, siyah üstüne asit yeşili.</p>
+    </li>
+    <li>
+      <h3><span class="swatch" style="background:#6c8087"></span><span lang="en">Unfinished details</span><span lang="tr">Özensiz detaylar</span></h3>
+      <span class="max">15 <small lang="en">points</small><small lang="tr">puan</small></span>
+      <p lang="en">“Lorem ipsum”, links to "#", "Vite + React + TS" left in the tab title, "Certainly! Here is…" pasted from a chat, missing alt text, removed focus outlines.</p>
+      <p lang="tr">“Lorem ipsum”, "#" adresine giden linkler, sekme başlığında kalmış "Vite + React + TS", sohbetten yapıştırılmış "Elbette! İşte…", eksik alt metinler, kaldırılmış odak çerçeveleri.</p>
+    </li>
+    <li>
+      <h3><span class="swatch" style="background:#a3b3b5"></span><span lang="en">Builder traces</span><span lang="tr">Üretici izleri</span></h3>
+      <span class="max">5 <small lang="en">points</small><small lang="tr">puan</small></span>
+      <p lang="en">Lovable, Bolt, v0, Replit and Base44 leave tags behind. Shown for information: using a builder is not slop by itself.</p>
+      <p lang="tr">Lovable, Bolt, v0, Replit ve Base44 geride iz bırakır. Bilgi olarak gösterilir: bir araç kullanmak tek başına slop değildir.</p>
+    </li>
+  </ul>
+  <p class="fine" lang="en">Real addresses, named people, prices, legal details and links to independent reviews lower the score. The full list with sources is in <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/CRITERIA.md">docs/CRITERIA.md</a>.</p>
+  <p class="fine" lang="tr">Gerçek adres, isimli kişiler, fiyatlar, yasal bilgiler ve bağımsız yorum linkleri skoru düşürür. Kaynaklarıyla tam liste <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/CRITERIA.md">docs/CRITERIA.md</a> dosyasında.</p>
+</section>
+
+<section class="wrap" id="how" aria-labelledby="how-h">
+  <div class="sec-head">
+    <h2 id="how-h"><span lang="en">From score to fixed page</span><span lang="tr">Skordan düzeltilmiş sayfaya</span></h2>
+    <p lang="en">You can stop after any step. Each one is useful on its own.</p>
+    <p lang="tr">Herhangi bir adımdan sonra bırakabilirsin. Her biri tek başına işe yarar.</p>
+  </div>
+  <ol class="steps">
+    <li>
+      <div>
+        <h3><span lang="en">Scan the whole site</span><span lang="tr">Bütün siteyi tara</span></h3>
+        <p lang="en">Give it a URL and it finds the pages through the sitemap and the links between them, up to 30 by default, 200 with <code>--pages all</code>. It follows robots.txt. A project folder works too, and then every finding points at a file and line.</p>
+        <p lang="tr">Bir URL ver, sayfaları site haritasından ve aralarındaki linklerden bulur. Varsayılan olarak 30 sayfaya, <code>--pages all</code> ile 200'e kadar tarar ve robots.txt'ye uyar. Proje klasörü de verebilirsin; o zaman her bulgu bir dosyayı ve satırı gösterir.</p>
+      </div>
+      <div class="shot"><img src="img/report.png" lang="en" width="1280" height="1240" alt="Report screen: a dial showing 83, the five areas as bars, and the first finding." loading="lazy"><img src="img/report-tr.png" lang="tr" width="1280" height="1240" alt="Rapor ekranı: 83 gösteren bir gösterge, beş alanın çubukları ve ilk bulgu." loading="lazy"></div>
+    </li>
+    <li>
+      <div>
+        <h3><span lang="en">Read what to do, not only what is wrong</span><span lang="tr">Neyin yanlış olduğunu değil, ne yapacağını oku</span></h3>
+        <p lang="en">Each finding opens to numbered steps, a before and after example, the exact lines to change and a check for when it is done. Every page also gets its own score and list, worst page first.</p>
+        <p lang="tr">Her bulgu açıldığında numaralı adımlar, bir önce/sonra örneği, değişecek satırlar ve ne zaman bitmiş sayılacağı yazıyor. Her sayfanın da kendi skoru ve listesi var, en kötü sayfa en üstte.</p>
+      </div>
+      <div class="shot"><img src="img/findings.png" lang="en" width="1280" height="1240" alt="A finding with three numbered steps, a before and after example, file and line locations and a copy button." loading="lazy"><img src="img/findings-tr.png" lang="tr" width="1280" height="1240" alt="Üç numaralı adım, önce/sonra örneği, dosya ve satır konumları ve kopyalama düğmesiyle bir bulgu." loading="lazy"></div>
+    </li>
+    <li>
+      <div>
+        <h3><span lang="en">Let your AI do it, one problem at a time</span><span lang="tr">Yapay zekân yapsın, her seferinde bir sorun</span></h3>
+        <p lang="en">Copy any finding as a prompt, or let the AI connected to AI Slop Meter work through the plan. It asks you for the facts it cannot know, like prices, names and real quotes, instead of making them up.</p>
+        <p lang="tr">Herhangi bir bulguyu prompt olarak kopyala ya da AI Slop Meter'a bağlı yapay zekânın planı uygulamasına izin ver. Fiyat, isim ve gerçek yorum gibi bilemeyeceği bilgileri uydurmak yerine sana sorar.</p>
+      </div>
+      <div class="shot"><img src="img/plan.png" lang="en" width="1280" height="1240" alt="What-to-do screen: score now 83, about 3 after the plan, three quick fixes and the owner questions." loading="lazy"><img src="img/plan-tr.png" lang="tr" width="1280" height="1240" alt="Yapılacaklar ekranı: şu an 83, plan sonrası yaklaşık 3, üç hızlı düzeltme ve sahibine sorular." loading="lazy"></div>
+    </li>
+    <li>
+      <div>
+        <h3><span lang="en">Measure again</span><span lang="tr">Tekrar ölç</span></h3>
+        <p lang="en">Scanning the same target again prints what went down, what is still open and what is new. When it finishes, it can open the report in your browser if you said yes at the start, so the result is waiting when you are back.</p>
+        <p lang="tr">Aynı hedefi tekrar taramak neyin düştüğünü, neyin açık kaldığını ve neyin yeni olduğunu yazar. İş bitince, başta izin verdiysen raporu tarayıcında açar; bilgisayara döndüğünde sonuç seni bekler.</p>
+      </div>
+      <table class="compare">
+        <thead><tr><th></th><th lang="en">Before</th><th lang="tr">Önce</th><th lang="en">After</th><th lang="tr">Sonra</th></tr></thead>
+        <tbody>
+          <tr><td><b lang="en">Score</b><b lang="tr">Skor</b></td><td class="n">83</td><td class="n down">1</td></tr>
+          <tr><td lang="en">Substance</td><td lang="tr">İçerik özü</td><td class="n">17</td><td class="n down">0</td></tr>
+          <tr><td lang="en">Language</td><td lang="tr">Dil</td><td class="n">21</td><td class="n down">0</td></tr>
+          <tr><td lang="en">Design</td><td lang="tr">Tasarım</td><td class="n">27.9</td><td class="n down">1</td></tr>
+          <tr><td lang="en">Unfinished details</td><td lang="tr">Özensiz detaylar</td><td class="n">15</td><td class="n down">0</td></tr>
+        </tbody>
+      </table>
+    </li>
+  </ol>
+</section>
+
+<section class="wrap" id="install" aria-labelledby="install-h">
+  <div class="sec-head">
+    <h2 id="install-h"><span lang="en">Install</span><span lang="tr">Kurulum</span></h2>
+    <p lang="en">You need <a href="https://nodejs.org">Node.js</a> 20 or newer. No account and no API key: it runs on your computer and uses the AI you already have.</p>
+    <p lang="tr"><a href="https://nodejs.org">Node.js</a> 20 ya da üstü gerekir. Hesap ya da API anahtarı yok: senin bilgisayarında çalışır ve zaten kullandığın yapay zekâyı kullanır.</p>
+  </div>
+  <div class="install">
+    <div>
+      <h3>Claude Code</h3>
+      <pre><code>claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp</code></pre>
+      <h3 style="margin-top:26px">Claude Desktop, Cursor, Gemini CLI, Windsurf</h3>
+      <p lang="en">Add this to the tool's MCP settings file (for Cursor: <code>.cursor/mcp.json</code>).</p>
+      <p lang="tr">Aracın MCP ayar dosyasına ekle (Cursor için: <code>.cursor/mcp.json</code>).</p>
+      <pre><code>{
+  "mcpServers": {
+    "aislopmeter": {
+      "command": "npx",
+      "args": ["-y", "github:omergocmen/aislopmeter", "mcp"]
+    }
+  }
+}</code></pre>
+    </div>
+    <div>
+      <h3><span lang="en">Then just ask</span><span lang="tr">Sonra sadece söyle</span></h3>
+      <p class="ask" lang="en">Scan https://my-site.com for AI slop and show me what to fix. Open the report when you are done.</p>
+      <p class="ask" lang="tr">https://sitem.com adresini AI slop açısından tara ve neyi düzeltmem gerektiğini göster. Bitince raporu aç.</p>
+      <p style="margin-top:18px" lang="en">Or run the built-in prompts: <code>rescue</code> takes the whole site to a target score, <code>fix</code> fixes only the most important problem and shows the difference.</p>
+      <p style="margin-top:18px" lang="tr">Ya da hazır komutları kullan: <code>rescue</code> bütün siteyi hedef skora indirir, <code>fix</code> sadece en önemli sorunu düzeltip farkı gösterir.</p>
+      <h3 style="margin-top:26px"><span lang="en">Command line and CI</span><span lang="tr">Komut satırı ve CI</span></h3>
+      <pre><code>npx -y github:omergocmen/aislopmeter https://site.com --open
+npx -y github:omergocmen/aislopmeter ./my-app --plan --lang tr
+npx -y github:omergocmen/aislopmeter ./dist --fail-above 40</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" aria-labelledby="limits-h">
+  <div class="sec-head">
+    <h2 id="limits-h"><span lang="en">What it is not</span><span lang="tr">Ne değildir</span></h2>
+    <p lang="en">Worth knowing before you trust a number.</p>
+    <p lang="tr">Bir sayıya güvenmeden önce bilmekte fayda var.</p>
+  </div>
+  <div class="limits">
+    <div>
+      <h3><span lang="en">Not an AI detector</span><span lang="tr">AI dedektörü değil</span></h3>
+      <p lang="en">It measures what readers notice, not who typed it. A page written with AI can score 0; a page typed by hand can score 70.</p>
+      <p lang="tr">Kimin yazdığını değil, okuyanın neyi fark ettiğini ölçer. Yapay zekâyla yazılmış bir sayfa 0, elle yazılmış bir sayfa 70 alabilir.</p>
+    </div>
+    <div>
+      <h3><span lang="en">Rules, not an AI judge</span><span lang="tr">Yapay zekâ hakem değil, kurallar</span></h3>
+      <p lang="en">In the largest study on the question, language models asked "is this slop?" agreed with human editors no better than chance. So the score comes from rules you can read, and your AI is used only to fix.</p>
+      <p lang="tr">Bu konudaki en kapsamlı çalışmada "bu slop mu?" diye sorulan dil modelleri insan editörlerle rastgeleden iyi uyuşmadı. Bu yüzden skor okuyabileceğin kurallardan gelir, yapay zekân sadece düzeltmek için kullanılır.</p>
+    </div>
+    <div>
+      <h3><span lang="en">Nothing leaves your computer</span><span lang="tr">Bilgisayarından bir şey çıkmaz</span></h3>
+      <p lang="en">The only requests it makes are to the site you asked it to scan. Reports are saved in a folder on your machine. No telemetry.</p>
+      <p lang="tr">Yaptığı tek istek taramasını istediğin siteye. Raporlar bilgisayarındaki bir klasöre kaydedilir. Telemetri yok.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span lang="en">Open source under the MIT license. Made by Ömer Göçmen. This page scores 7 (clean) on its own meter.</span>
+    <span lang="tr">MIT lisanslı açık kaynak. Ömer Göçmen yaptı. Bu sayfa kendi ölçerinde 7 alıyor (temiz).</span>
+    <span><a href="https://github.com/omergocmen/aislopmeter">github.com/omergocmen/aislopmeter</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  // language: ?lang= wins, then a saved choice, then the browser language
+  let saved = null;
+  try { saved = localStorage.getItem('aislopmeter-lang'); } catch (e) {}
+  const q = new URLSearchParams(location.search).get('lang');
+  const initial = q === 'tr' || q === 'en' ? q : saved || ((navigator.language || '').toLowerCase().startsWith('tr') ? 'tr' : 'en');
+  function setLang(l) {
+    root.dataset.lang = l;
+    root.lang = l;
+    document.querySelectorAll('[data-set-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setLang === l)));
+    document.title = l === 'tr' ? 'AI Slop Meter: sitendeki AI slop\'u ölç, sonra temizle' : 'AI Slop Meter: measure the AI slop on your website, then fix it';
+  }
+  setLang(initial);
+  document.querySelectorAll('[data-set-lang]').forEach((b) => b.addEventListener('click', () => {
+    setLang(b.dataset.setLang);
+    try { localStorage.setItem('aislopmeter-lang', b.dataset.setLang); } catch (e) {}
+  }));
+
+  // the meter: a 180° scale from 0 (left) to 100 (right)
+  const ticks = document.getElementById('ticks');
+  const NS = 'http://www.w3.org/2000/svg';
+  for (let v = 0; v <= 100; v += 5) {
+    const a = Math.PI * (1 - v / 100);
+    const long = v % 20 === 0;
+    const r1 = long ? 116 : 122, r2 = 128;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('class', 'scale-tick');
+    l.setAttribute('x1', 200 + r1 * Math.cos(a)); l.setAttribute('y1', 200 - r1 * Math.sin(a));
+    l.setAttribute('x2', 200 + r2 * Math.cos(a)); l.setAttribute('y2', 200 - r2 * Math.sin(a));
+    ticks.appendChild(l);
+    if (long) {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('class', 'scale-num');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('x', 200 + 100 * Math.cos(a)); t.setAttribute('y', 204 - 100 * Math.sin(a));
+      t.textContent = v;
+      ticks.appendChild(t);
+    }
+  }
+  const needle = document.getElementById('needle');
+  const read = document.getElementById('meter-read');
+  const specimen = document.getElementById('specimen');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let shown = 0, raf = 0;
+  function point(score) {
+    needle.style.transform = `rotate(${-90 + score * 1.8}deg)`;
+    cancelAnimationFrame(raf);
+    if (reduce) { read.textContent = score; shown = score; return; }
+    const from = shown, t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 1100);
+      shown = Math.round(from + (score - from) * (1 - Math.pow(1 - k, 3)));
+      read.textContent = shown;
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  const buttons = document.querySelectorAll('.switch button');
+  function state(s) {
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === s)));
+    specimen.dataset.state = s;
+    point(s === 'after' ? 1 : 83);
+  }
+  buttons.forEach((b) => b.addEventListener('click', () => state(b.dataset.state)));
+  // the one moving moment: the needle swings up to the "before" reading once the page is shown
+  requestAnimationFrame(() => setTimeout(() => point(83), reduce ? 0 : 250));
+
+  // copy buttons
+  document.querySelectorAll('[data-copy]').forEach((btn) => btn.addEventListener('click', async () => {
+    const text = document.getElementById(btn.dataset.copy).textContent;
+    const label = btn.innerHTML;
+    try { await navigator.clipboard.writeText(text); btn.textContent = root.dataset.lang === 'tr' ? 'Kopyalandı' : 'Copied'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById(btn.dataset.copy)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+    setTimeout(() => { btn.innerHTML = label; }, 1600);
+  }));
+})();
+</script>
+</body>
+</html>

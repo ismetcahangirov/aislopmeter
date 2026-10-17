@@ -1,5 +1,7 @@
 # AI Slop Meter
 
+[Türkçe](README.tr.md) · **English**
+
 **Measure the AI slop on any website. Then fix it.**
 
 AI Slop Meter scores a website or a web project for *slop*: generic copy, the default AI-builder look, and unfinished details.
@@ -10,9 +12,22 @@ AI Slop Meter scores a website or a web project for *slop*: generic copy, the de
 
 It runs on your machine as an **MCP server** and a **CLI**. No API keys, no account, nothing sent anywhere except the request to the site you asked it to scan.
 
-[Türkçe README](README.tr.md)
+## Quick start (2 minutes)
 
-| Before: 69 / 100, heavy slop | After: 1 / 100, clean |
+1. Have [Node.js](https://nodejs.org) 20 or newer installed.
+2. In Claude Code, paste:
+   ```bash
+   claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp
+   ```
+   For Claude Desktop, Cursor and others, see [Install as an MCP server](#install-as-an-mcp-server).
+3. Ask your AI: **"Scan https://my-site.com for AI slop and show me what to fix."**
+
+To try it without installing anything:
+```bash
+npx -y github:omergocmen/aislopmeter https://my-site.com --open
+```
+
+| Before: 83 / 100, pure slop | After: 1 / 100, clean |
 |---|---|
 | ![Before](docs/img/before.png) | ![After](docs/img/after.png) |
 
@@ -20,7 +35,7 @@ Both pages are in [`examples/novaflow`](examples/novaflow). The "after" page was
 
 ## What it does
 
-1. **Scans** a URL, a project folder (Next.js, Vite/React, Astro, Vue, Svelte, plain HTML, Markdown content…) or a single `.html` file.
+1. **Scans** a whole website, a project folder (Next.js, Vite/React, Astro, Vue, Svelte, plain HTML, Markdown content…) or a single `.html` file. For a website it finds the pages through `sitemap.xml` and internal links (respecting `robots.txt`), scans up to 30 by default (`--pages all` for up to 200) and gives **every page its own score and to-do list**. A problem that repeats across pages is shown once, with the list of pages it is on.
 2. **Scores** five areas, with research-based checks ([criteria and sources](docs/CRITERIA.md)):
    - **Substance:** concrete facts, claims you can check, real proof
    - **Language patterns:** clichés, "not just X, but Y", empty importance claims
@@ -40,7 +55,7 @@ Both pages are in [`examples/novaflow`](examples/novaflow). The "after" page was
    - numbered steps and the exact `file:line` places to change;
    - a before/after example for copy problems, and a "done when" check;
    - a **Copy as a prompt for your AI** button that hands that one problem to Claude, Cursor or Lovable.
-5. **Shows it** in a two-screen visual report. The **Report** screen has the score and the findings. The **What to do** screen has a checklist that starts with three quick wins, and boxes for answering the owner questions.
+5. **Shows it** in a two-screen visual report. The **Report** screen has the score and the findings. The **What to do** screen has a checklist that starts with three quick wins, and boxes for answering the owner questions. For site scans, a **Pages** screen lists every page, worst first, with its own score and findings.
 6. **Re-measures** after each change and prints a before/after table.
 
 | Report | What to do |
@@ -55,22 +70,24 @@ Every finding opens to the same "what to do" box:
 
 You need Node.js 20 or newer.
 
+For now the package runs straight from GitHub (`github:omergocmen/aislopmeter`). The first run downloads and installs it, which takes a few seconds.
+
 **Claude Code**
 ```bash
-claude mcp add aislopmeter -- npx -y aislopmeter mcp
+claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp
 ```
 
 **Claude Desktop**: add this to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "aislopmeter": { "command": "npx", "args": ["-y", "aislopmeter", "mcp"] }
+    "aislopmeter": { "command": "npx", "args": ["-y", "github:omergocmen/aislopmeter", "mcp"] }
   }
 }
 ```
 
 **Cursor** (`.cursor/mcp.json`), **Gemini CLI** (`~/.gemini/settings.json`), **Windsurf** and others: use the same `mcpServers` block.
-**VS Code** (`.vscode/mcp.json`): use `"servers": { "aislopmeter": { "type": "stdio", "command": "npx", "args": ["-y", "aislopmeter", "mcp"] } }`.
+**VS Code** (`.vscode/mcp.json`): use `"servers": { "aislopmeter": { "type": "stdio", "command": "npx", "args": ["-y", "github:omergocmen/aislopmeter", "mcp"] } }`.
 
 ## Use it
 
@@ -95,9 +112,10 @@ Prefer small steps? The **`fix` prompt** (`/mcp__aislopmeter__fix`) fixes only t
 
 | Tool | What it does |
 |---|---|
-| `slop_scan` | Scan a URL (`pages` to follow internal links), a folder or an `.html` file. Writes the visual report; `open_report` opens it. Re-scans compare automatically. |
+| `slop_scan` | Scan a website (crawls up to `pages`, default 30, max 200), a folder or an `.html` file. Writes the visual report; `open_report` opens it. Re-scans compare automatically. |
 | `slop_scan_html` | Scan pasted or generated HTML. |
 | `slop_rescue_plan` | Turn a scan into a phased plan, with `keep` for things the owner wants untouched and `target_score`. |
+| `slop_page` | The full report for one page of a site scan, with its own findings and steps. |
 | `slop_fix` | Step-by-step instructions for one finding: what to change, where (`file:line`), an example and a done-when check. Without `finding_id` it picks the most important one and lists the rest. |
 | `slop_report` | Write or open the visual report for a scan. |
 | `slop_compare` | Before/after for two scan ids. |
@@ -108,11 +126,13 @@ The same guides are also exposed as MCP resources (`aislopmeter://guide/...`).
 ## Command line
 
 ```bash
-npx aislopmeter https://example.com --pages 5      # live site, up to 5 pages
-npx aislopmeter ./my-app --plan --lang tr          # project folder, plus the rescue plan in Turkish
-npx aislopmeter ./my-app --open                    # write the visual report and open it
-npx aislopmeter ./dist/index.html --fail-above 40  # fail CI when the score is above 40
-npx aislopmeter ./my-app --json                    # raw result
+npx -y github:omergocmen/aislopmeter https://example.com                # whole site, up to 30 pages
+npx -y github:omergocmen/aislopmeter https://example.com --pages all    # up to 200 pages
+npx -y github:omergocmen/aislopmeter https://example.com --pages 1      # only this page
+npx -y github:omergocmen/aislopmeter ./my-app --plan --lang tr          # project folder, plus the rescue plan in Turkish
+npx -y github:omergocmen/aislopmeter ./my-app --open                    # write the visual report and open it
+npx -y github:omergocmen/aislopmeter ./dist/index.html --fail-above 40  # fail CI when the score is above 40
+npx -y github:omergocmen/aislopmeter ./my-app --json                    # raw result
 ```
 
 Reports are written to `~/.aislopmeter/reports/`. Set `AISLOPMETER_REPORT_DIR` to change that.
@@ -121,7 +141,7 @@ Folder scans skip `node_modules`, hidden folders and the ready-made primitives i
 
 **In CI** (GitHub Actions):
 ```yaml
-- run: npx -y aislopmeter ./ --fail-above 40
+- run: npx -y github:omergocmen/aislopmeter ./ --fail-above 40
 ```
 
 ## Pages built with JavaScript
@@ -134,15 +154,15 @@ Each finding adds points, and each category has a cap:
 
 | Category | Max |
 |---|---|
-| Substance | 35 |
-| Language | 25 |
-| Design | 20 |
+| Substance | 30 |
+| Language | 22 |
+| Design | 28 |
 | Unfinished details | 15 |
 | Builder traces | 5 |
 
 Signs that a real business stands behind the page lower the score: a real address, named people, prices, legal details, links to independent reviews.
 
-A high score needs problems in at least three areas. One loud area alone, such as a purple brand, is capped at 45.
+A high score needs problems in several areas: with only one area the score is capped at 35, with two at 60. A purple brand colour alone is never heavy slop. For websites the page's own `style.css` and scripts are read too.
 
 Bands:
 
@@ -165,7 +185,7 @@ Why rules and not an AI judge? In the largest study so far, LLMs asked "is this 
 ## Privacy
 
 Everything runs locally.
-- **URL scans:** AI Slop Meter fetches only the pages you point it at.
+- **URL scans:** AI Slop Meter fetches only pages of the site you point it at, follows `robots.txt`, and stops at the page limit.
 - **Folder scans:** files are only read, never changed.
 - **Reports:** written only to your own computer, in `~/.aislopmeter/reports/`.
 - **No telemetry.**

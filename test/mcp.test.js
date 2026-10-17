@@ -17,7 +17,7 @@ test('MCP server: scan, plan, re-scan with automatic compare', async () => {
   await client.connect(new StdioClientTransport({ command: process.execPath, args: [bin, 'mcp'], env: { ...process.env, AISLOPMETER_REPORT_DIR: reportDir } }));
   try {
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map((t) => t.name).sort(), ['slop_compare', 'slop_fix', 'slop_guide', 'slop_report', 'slop_rescue_plan', 'slop_scan', 'slop_scan_html']);
+    assert.deepEqual(tools.map((t) => t.name).sort(), ['slop_compare', 'slop_fix', 'slop_guide', 'slop_page', 'slop_report', 'slop_rescue_plan', 'slop_scan', 'slop_scan_html']);
     const { prompts } = await client.listPrompts();
     assert.ok(prompts.some((p) => p.name === 'rescue'));
     assert.ok(prompts.some((p) => p.name === 'fix'));

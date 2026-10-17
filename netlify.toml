@@ -1,0 +1,9 @@
+# Netlify: the promo site lives in site/. No build step.
+[build]
+  publish = "site"
+  command = ""
+
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

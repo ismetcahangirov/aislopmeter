@@ -61,58 +61,117 @@ export function looksLikeShell(html) {
   return words < 60 && !!document.querySelector('#root, #app, #__next, #__nuxt, [data-reactroot], #svelte, [id^="app"]');
 }
 
-/** Render with the system browser. Returns null (with a reason) when that is not possible. */
-export async function renderHtml(url, { timeoutMs = 30000 } = {}) {
+async function launchBrowser() {
   let pw;
   try {
     pw = await import('playwright-core');
   } catch {
-    return { html: null, reason: 'playwright-core is not installed' };
+    return { browser: null, reason: 'playwright-core is not installed' };
   }
-  const channels = ['chrome', 'msedge', 'chromium'];
-  let browser = null;
   let lastErr = null;
-  for (const channel of channels) {
-    try {
-      browser = await pw.chromium.launch({ channel, headless: true });
-      break;
-    } catch (e) {
-      lastErr = e;
-    }
+  for (const channel of ['chrome', 'msedge', 'chromium']) {
+    try { return { browser: await pw.chromium.launch({ channel, headless: true }) }; } catch (e) { lastErr = e; }
   }
-  if (!browser) {
-    const exe = process.env.AISLOPMETER_CHROME;
-    if (exe) {
-      try { browser = await pw.chromium.launch({ executablePath: exe, headless: true }); } catch (e) { lastErr = e; }
-    }
+  const exe = process.env.AISLOPMETER_CHROME;
+  if (exe) {
+    try { return { browser: await pw.chromium.launch({ executablePath: exe, headless: true }) }; } catch (e) { lastErr = e; }
   }
-  if (!browser) return { html: null, reason: 'no Chrome, Edge or Chromium found (set AISLOPMETER_CHROME to a browser path)', error: String(lastErr?.message || '').split('\n')[0] };
+  return { browser: null, reason: 'no Chrome, Edge or Chromium found (set AISLOPMETER_CHROME to a browser path)', error: String(lastErr?.message || '').split('\n')[0] };
+}
+
+async function renderWith(browser, url, timeoutMs) {
+  const page = await browser.newPage({ userAgent: UA.replace('compatible; ', '') });
   try {
-    const page = await browser.newPage({ userAgent: UA.replace('compatible; ', '') });
     await page.goto(url, { waitUntil: 'networkidle', timeout: timeoutMs }).catch(() => page.waitForTimeout(3000));
     await page.waitForTimeout(800);
-    const html = await page.content();
-    return { html, reason: null };
+    return { html: await page.content(), reason: null };
   } catch (e) {
     return { html: null, reason: 'render failed', error: String(e.message).split('\n')[0] };
   } finally {
-    await browser.close().catch(() => {});
+    await page.close().catch(() => {});
   }
 }
 
+/** Render with the system browser. Returns null (with a reason) when that is not possible. */
+export async function renderHtml(url, { timeoutMs = 30000 } = {}) {
+  const { browser, reason, error } = await launchBrowser();
+  if (!browser) return { html: null, reason, error };
+  try { return await renderWith(browser, url, timeoutMs); } finally { await browser.close().catch(() => {}); }
+}
+
+/** One browser kept open for many pages (used while crawling a client-rendered site). */
+export async function openRenderer({ timeoutMs = 30000 } = {}) {
+  const { browser, reason, error } = await launchBrowser();
+  return {
+    render: (url) => (browser ? renderWith(browser, url, timeoutMs) : Promise.resolve({ html: null, reason, error })),
+    close: () => (browser ? browser.close().catch(() => {}) : Promise.resolve()),
+  };
+}
+
+/* ---------- linked CSS and JS ---------- */
+// Most real sites keep their styles in style.css and their effects in script.js.
+// Without them the design checks only see inline styles and Tailwind classes.
+const LIB = /(?:font-?awesome|bootstrap|jquery|swiper|slick|aos|animate(?:\.min)?\.css|normalize|reset|tailwind(?:\.min)?\.css|gtag|google-analytics|googletagmanager|hotjar|clarity|recaptcha|cookie|polyfill|vendor|chunk-vendors|framework-|react-dom|webpack-runtime)/i;
+const MAX_CSS = 8, MAX_JS = 4, MAX_ASSET = 600 * 1024;
+
+export function linkedAssets(html, baseUrl) {
+  const css = [], js = [];
+  for (const m of String(html).matchAll(/<link\b[^>]{0,600}>/gi)) {
+    const tag = m[0];
+    if (!/rel\s*=\s*["']?[^"'>]*stylesheet/i.test(tag)) continue;
+    const href = (tag.match(/href\s*=\s*["']([^"']+)["']/i) || tag.match(/href\s*=\s*([^\s>]+)/i) || [])[1];
+    if (href) css.push(href);
+  }
+  for (const m of String(html).matchAll(/<script\b[^>]{0,600}\bsrc\s*=\s*["']([^"']+)["'][^>]{0,300}>/gi)) js.push(m[1]);
+  const abs = (h) => { try { return new URL(h, baseUrl).toString(); } catch { return null; } };
+  return { css: css.map(abs).filter(Boolean), js: js.map(abs).filter(Boolean) };
+}
+
+async function fetchText2(url) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 10000);
+  try {
+    const res = await fetch(url, { signal: ctl.signal, headers: { 'user-agent': UA } });
+    if (!res.ok) return null;
+    const len = +(res.headers.get('content-length') || 0);
+    if (len > MAX_ASSET) return null;
+    const text = await res.text();
+    return text.length > MAX_ASSET ? text.slice(0, MAX_ASSET) : text;
+  } catch { return null; } finally { clearTimeout(t); }
+}
+
+/** Fetch the page's own stylesheets and scripts (same site, no well-known libraries). */
+export async function fetchAssets(html, pageUrl, cache = new Map()) {
+  const base = new URL(pageUrl);
+  const host = (h) => h.replace(/^www\./, '');
+  const { css, js } = linkedAssets(html, pageUrl);
+  const pick = (list, max) => list.filter((u) => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) && host(x.host) === host(base.host) && !LIB.test(x.pathname); } catch { return false; } }).slice(0, max);
+  const out = [];
+  for (const [kind, list] of [['css', pick(css, MAX_CSS)], ['js', pick(js, MAX_JS)]]) {
+    for (const u of list) {
+      if (!cache.has(u)) cache.set(u, fetchText2(u));
+      const text = await cache.get(u);
+      if (text) out.push({ kind, url: u, name: new URL(u).pathname.replace(/^\//, '') || u, text });
+    }
+  }
+  return out;
+}
+
 /** Fetch, and render if the page is a shell. */
-export async function loadPage(input, { render = 'auto' } = {}) {
+export async function loadPage(input, { render = 'auto', assets = true, assetCache } = {}) {
   const url = normalizeUrl(input);
   const got = await fetchHtml(url);
   const notes = [];
   let html = got.html;
   let rendered = false;
-  if (render === 'always' || (render === 'auto' && looksLikeShell(html))) {
+  const shell = looksLikeShell(html);
+  if (render === 'always' || (render === 'auto' && shell)) {
     const r = await renderHtml(got.finalUrl);
     if (r.html) { html = r.html; rendered = true; }
     else notes.push({ code: 'render-unavailable', reason: r.reason, error: r.error });
   }
-  return { url: got.finalUrl, html, rendered, notes };
+  const files = assets ? await fetchAssets(html, got.finalUrl, assetCache) : [];
+  return { url: got.finalUrl, html, rendered, notes, assets: files, shell };
 }
 
 /** Same-origin links worth scanning next, most informative pages first. */

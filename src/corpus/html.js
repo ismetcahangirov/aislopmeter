@@ -42,7 +42,9 @@ function countCardGroups(all) {
     const [best, n] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
     if (n < 3) continue;
     const same = kids.filter((k) => sig(k) === best);
-    if (same.every((k) => k.querySelector('h2,h3,h4,h5,h6,strong') && k.querySelector('p'))) groups++;
+    // the template is icon + title + one line; blocks with real paragraphs are content, not cards
+    const avgWords = same.reduce((a, k) => a + wordsOf(k.textContent || '').length, 0) / same.length;
+    if (avgWords <= 30 && same.every((k) => k.querySelector('h2,h3,h4,h5,h6,strong') && k.querySelector('p'))) groups++;
   }
   return groups;
 }
@@ -96,10 +98,29 @@ function attachLocations(C, html, file) {
   if (C.meta) C.meta.file = file;
 }
 
-export function corpusFromHtml(html, { url = '', file = null } = {}) {
+export function corpusFromHtml(html, { url = '', file = null, assets = [] } = {}) {
   const C = buildCorpus(html, { url });
   if (file) attachLocations(C, html, file);
+  if (assets.length) addAssets(C, assets, html, file);
   return C;
+}
+
+/** Linked stylesheets and scripts: their rules feed the design checks, with file:line where possible. */
+function addAssets(C, assets, html, file) {
+  const sources = C.sources || [{ file: file || null, content: html, lineAt: file ? lineIndex(html) : () => null }];
+  const js = [];
+  for (const a of assets) {
+    const lineAt = lineIndex(a.text);
+    sources.push({ file: a.name, content: a.text, lineAt });
+    if (a.kind === 'css') {
+      // one entry per rule block so findings can point at the line
+      for (const m of a.text.matchAll(/[^{}]{0,2000}\{[^{}]{0,8000}\}/g)) C.css.push({ text: m[0], loc: { file: a.name, line: lineAt(m.index + (m[0].length - m[0].trimStart().length)) }, ext: true });
+      C.fonts += ' ' + a.text.slice(0, 200000);
+    } else js.push(a.text);
+  }
+  C.sources = sources;
+  C.jsText = js.join('\n');
+  C.assetNames = assets.map((a) => a.name);
 }
 
 function buildCorpus(html, { url = '' } = {}) {

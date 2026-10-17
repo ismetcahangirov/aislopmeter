@@ -39,6 +39,8 @@ const UI = {
     startHere: 'Start here', startLead: (m, g) => `Three quick fixes, about ${m} minutes, about −${g} points. Nothing else needs to happen today.`,
     howTo: 'How to do it', arrow: '→',
     todo: 'What to do', doneWhen: 'Done when', example: 'Example', before: 'Before', after2: 'After', why: 'Why this counts',
+    tabPages: 'Pages', pagesTitle: (n) => `${n} pages scanned`, pagesLead: 'Every page has its own score and its own to-do list. Worst first. The site score is half the average page (home counts double, legal pages left out) and half the worst page.',
+    pagesWord: 'Pages', onPages: (n) => `on ${n} page${n === 1 ? '' : 's'}`, openPage: 'Open the page', pageIssues: (n) => `${n} finding${n === 1 ? '' : 's'}`, failedPages: 'Could not be opened', cleanPage: 'Nothing to fix on this page.',
     giveAi: 'Copy as a prompt for your AI', giveAiNote: 'One problem at a time: paste into Claude, Cursor, Lovable…', fixesAt: (n) => `${n} place${n === 1 ? '' : 's'} to change`,
   },
   tr: {
@@ -62,6 +64,8 @@ const UI = {
     startHere: 'Buradan başla', startLead: (m, g) => `Üç hızlı düzeltme, yaklaşık ${m} dakika, yaklaşık −${g} puan. Bugün başka bir şey yapmanıza gerek yok.`,
     howTo: 'Nasıl yapılır', arrow: '→',
     todo: 'Ne yapmalısın', doneWhen: 'Bitti sayılır', example: 'Örnek', before: 'Önce', after2: 'Sonra', why: 'Neden sayıldı',
+    tabPages: 'Sayfalar', pagesTitle: (n) => `${n} sayfa tarandı`, pagesLead: 'Her sayfanın kendi skoru ve kendi yapılacaklar listesi var. En kötüsü en üstte. Site skorunun yarısı ortalama sayfadan (ana sayfa iki kat, yasal sayfalar hariç), yarısı en kötü sayfadan gelir.',
+    pagesWord: 'Sayfalar', onPages: (n) => `${n} sayfada`, openPage: 'Sayfayı aç', pageIssues: (n) => `${n} bulgu`, failedPages: 'Açılamayan sayfalar', cleanPage: 'Bu sayfada düzeltilecek bir şey yok.',
     giveAi: 'Yapay zekân için prompt olarak kopyala', giveAiNote: 'Tek seferde tek sorun: Claude, Cursor, Lovable… içine yapıştır.', fixesAt: (n) => `değiştirilecek ${n} yer`,
   },
 };
@@ -106,11 +110,20 @@ function stepsHtml(f, lang, U) {
 
 const fkey = (f) => `${f.id}|${f.page || ''}`;
 
+function pagesList(f, scan, U) {
+  if (!f.pages?.length || scan?.kind !== 'site') return '';
+  const base = scan.url || scan.target;
+  const link = (p) => { let href = p; try { href = new URL(p, base).toString(); } catch { /* keep */ } return `<li><a href="${esc(href)}" target="_blank" rel="noopener"><code>${esc(p)}</code></a></li>`; };
+  const shown = f.pages.slice(0, 12).map(link).join('');
+  const more = f.pages.length > 12 ? `<details class="more"><summary>${U.moreItems(f.pages.length - 12)}</summary><ul class="locs">${f.pages.slice(12).map(link).join('')}</ul></details>` : '';
+  return `<h4>${U.pagesWord} (${f.pages.length})</h4><ul class="locs pagelist">${shown}</ul>${more}`;
+}
+
 function aiButton(f, U) {
   return `<div class="row"><button type="button" class="btn small" data-copy="fix" data-fid="${esc(fkey(f))}">${U.giveAi}</button><span class="status" aria-live="polite"></span></div>`;
 }
 
-function findingItem(f, lang, U, open = false) {
+function findingItem(f, lang, U, open = false, scan = null) {
   const T = labels(lang);
   const ev = (f.evidence || []).filter(Boolean);
   const ls = (f.locations || []).filter(Boolean);
@@ -120,12 +133,13 @@ function findingItem(f, lang, U, open = false) {
     <span class="pts tone-${f.severity}">+${fmt(f.pts)}</span>
     <span class="ft"><span class="ftitle">${esc(pick(f.title, lang))}</span>
       ${oneLine ? `<span class="fdo"><b>${U.arrow}</b> ${esc(oneLine)}</span>` : ''}
-      <span class="chips"><span>${esc(T.cats[f.cat])}</span><span>${esc(T.effort[f.effort] || f.effort || '')}</span>${f.needsFacts ? `<span>${esc(T.needsFacts)}</span>` : ''}${f.page ? `<span>${esc(f.page)}</span>` : ''}${ls.length ? `<span>${esc(U.fixesAt(ls.length))}</span>` : ''}</span></span>
+      <span class="chips"><span>${esc(T.cats[f.cat])}</span><span>${esc(T.effort[f.effort] || f.effort || '')}</span>${f.needsFacts ? `<span>${esc(T.needsFacts)}</span>` : ''}${f.page ? `<span>${esc(f.page)}</span>` : ''}${f.pageCount > 1 || (f.pageCount === 1 && scan?.kind === 'site') ? `<span>${esc(U.onPages(f.pageCount))}</span>` : ''}${ls.length ? `<span>${esc(U.fixesAt(ls.length))}</span>` : ''}</span></span>
   </summary>
   <div class="fbody">
     <div class="todo-box">
       <h4>${U.todo}</h4>
       ${stepsHtml(f, lang, U)}
+      ${pagesList(f, scan, U)}
       ${ls.length ? `<h4>${U.where}</h4><ul class="locs">${ls.map(loc).join('')}</ul>` : ''}
       ${aiButton(f, U)}
     </div>
@@ -188,7 +202,7 @@ export function renderHtml(scan, { lang = 'en', plan = null, history = [], targe
   const todoItem = (f) => {
     const id = `${f.id}|${f.page || ''}`;
     const ls = (f.locations || []).filter(Boolean);
-    return `<li><label><input type="checkbox" data-id="${esc(id)}"><span><b>${esc(pick(f.title, lang))}</b> <em>${esc(pick(f.fix, lang))}</em></span></label><details class="where"><summary>${U.howTo}${ls.length ? ` · ${esc(U.fixesAt(ls.length))}` : ''}</summary>${stepsHtml(f, lang, U)}${ls.length ? `<ul class="locs">${ls.map(loc).join('')}</ul>` : ''}${aiButton(f, U)}</details></li>`;
+    return `<li><label><input type="checkbox" data-id="${esc(id)}"><span><b>${esc(pick(f.title, lang))}</b> <em>${esc(pick(f.fix, lang))}</em></span></label><details class="where"><summary>${U.howTo}${f.pageCount > 1 ? ` · ${esc(U.onPages(f.pageCount))}` : ''}${ls.length ? ` · ${esc(U.fixesAt(ls.length))}` : ''}</summary>${stepsHtml(f, lang, U)}${pagesList(f, scan, U)}${ls.length ? `<ul class="locs">${ls.map(loc).join('')}</ul>` : ''}${aiButton(f, U)}</details></li>`;
   };
   const phaseHtml = plan.phases.map((ph, i) => {
     const steps = ph.steps || [];
@@ -221,6 +235,22 @@ export function renderHtml(scan, { lang = 'en', plan = null, history = [], targe
   const scale = (v) => `${Math.max(0, Math.min(100, v))}%`;
   const prompt = promptText(plan, scan, lang);
   const fixPrompts = Object.fromEntries(issues.map((f) => [fkey(f), fixPrompt(f, scan, lang)]));
+  const pageRes = scan.kind === 'site' ? [...(scan.pageResults || [])].sort((a, b) => b.total - a.total) : [];
+  for (const p of pageRes.slice(0, 60)) for (const f of p.findings) if (f.kind === 'issue') fixPrompts[fkey(f)] = fixPrompt(f, scan, lang);
+  const failed = scan.kind === 'site' ? (scan.pages || []).filter((p) => p.error) : [];
+  const pagesHtml = !pageRes.length ? '' : `<section id="pages" role="tabpanel" aria-labelledby="t-pages" hidden>
+  <h2>${esc(U.pagesTitle(pageRes.length))}</h2>
+  <p class="lead">${U.pagesLead}</p>
+  <ol class="pages">${pageRes.map((p, i) => {
+    const iss = p.findings.filter((f) => f.kind === 'issue');
+    let href = p.url || p.path;
+    return `<li><details class="page"${i === 0 ? ' open' : ''}><summary><span class="pscore tone-${BAND_TONE[p.band]}">${p.total}</span><span class="ppath"><code>${esc(p.path)}</code><small>${esc(T.bands[p.band])} · ${esc(U.pageIssues(iss.length))}${p.words != null ? ` · ${esc(p.words)} ${esc(T.words)}` : ''}</small></span><span class="bar"><i style="width:${Math.max(0, Math.min(100, p.total))}%"></i></span></summary>
+    <div class="pagebody"><p class="hint"><a href="${esc(href)}" target="_blank" rel="noopener">${U.openPage} ↗</a></p>
+    ${iss.length ? iss.slice(0, 6).map((f, j) => findingItem(f, lang, U, j === 0 && i === 0, scan)).join('') : `<p>${U.cleanPage}</p>`}
+    ${iss.length > 6 ? `<details class="more"><summary>${U.more(iss.length - 6)}</summary>${iss.slice(6).map((f) => findingItem(f, lang, U, false, scan)).join('')}</details>` : ''}</div></details></li>`;
+  }).join('')}</ol>
+  ${failed.length ? `<h3 style="margin-top:28px">${U.failedPages}</h3><ul class="plain">${failed.map((p) => `<li><code>${esc(p.path)}</code> — ${esc(p.error)}</li>`).join('')}</ul>` : ''}
+</section>`;
 
   return `<!doctype html>
 <html lang="${lang === 'tr' ? 'tr' : 'en'}">
@@ -309,6 +339,19 @@ details.why-box{margin-top:12px}
 details.why-box>summary{cursor:pointer;color:var(--blue);font:500 14px var(--display);padding:4px 0}
 .where .steps{margin-top:8px}
 .where .row{margin-top:8px}
+nav.tabs button small{font:600 12px var(--mono);color:var(--muted);margin-left:4px}
+.pages{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:0}
+.page{border-top:1px solid var(--line)}
+.pages>li:last-child .page{border-bottom:1px solid var(--line)}
+.page>summary{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(80px,200px);gap:16px;align-items:center;padding:12px 4px;cursor:pointer;list-style:none}
+.page>summary::-webkit-details-marker{display:none}
+.pscore{font:700 24px/1 var(--display);font-variant-numeric:tabular-nums;text-align:right}
+.pscore.tone-good{color:var(--good)} .pscore.tone-warn{color:var(--warn)} .pscore.tone-bad{color:var(--stain)}
+.ppath code{font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+.ppath small{display:block;font:500 12.5px var(--display);color:var(--muted);margin-top:3px}
+.pagebody{padding:0 4px 16px 72px}
+.pagebody .finding:first-of-type{border-top:0}
+.pagelist a{text-decoration:none}
 ul.ev,ul.locs{margin:0;padding:0;list-style:none}
 ul.ev li{font:13.5px/1.5 var(--mono);padding:3px 0;color:var(--ink);overflow-wrap:anywhere}
 ul.locs li{font-size:14px;padding:2px 0;overflow-wrap:anywhere}
@@ -372,7 +415,7 @@ details.rules summary{cursor:pointer;font:600 16px var(--display)}
 footer{border-top:1px solid var(--line);color:var(--muted);font:13px var(--mono)}
 footer .wrap{padding-block:18px 32px}
 [hidden]{display:none!important}
-@media (max-width:760px){.ex{grid-template-columns:1fr}.pbody{padding-left:0}.nums .tgtbox{margin-left:0}.hero{grid-template-columns:1fr;gap:16px;justify-items:start}.dial{width:180px;height:180px}.fbody{padding-left:4px}.cat{grid-template-columns:minmax(0,1fr) 64px}.cat .bar{grid-column:1/-1;grid-row:2}}
+@media (max-width:760px){.page>summary{grid-template-columns:44px minmax(0,1fr)}.page>summary .bar{display:none}.pagebody{padding-left:0}.ex{grid-template-columns:1fr}.pbody{padding-left:0}.nums .tgtbox{margin-left:0}.hero{grid-template-columns:1fr;gap:16px;justify-items:start}.dial{width:180px;height:180px}.fbody{padding-left:4px}.cat{grid-template-columns:minmax(0,1fr) 64px}.cat .bar{grid-column:1/-1;grid-row:2}}
 @media (prefers-reduced-motion:no-preference){.dial .arc{transition:stroke-dasharray .8s ease-out}}
 </style>
 </head>
@@ -382,7 +425,8 @@ footer .wrap{padding-block:18px 32px}
   <div class="target">${esc(scan.display || scan.target)}</div>
   <nav class="tabs" role="tablist">
     <button role="tab" id="t-report" aria-controls="report" aria-selected="true">${U.tabReport}</button>
-    <button role="tab" id="t-plan" aria-controls="plan" aria-selected="false">${U.tabPlan}</button>
+    <button role="tab" id="t-plan" aria-controls="plan" aria-selected="false">${U.tabPlan}</button>${pagesHtml ? `
+    <button role="tab" id="t-pages" aria-controls="pages" aria-selected="false">${U.tabPages} <small>${pageRes.length}</small></button>` : ''}
   </nav>
 </div></header>
 
@@ -394,7 +438,7 @@ footer .wrap{padding-block:18px 32px}
       <div class="band">${esc(T.bands[scan.band])}<small>${scan.total} ${U.of}</small></div>
       <p class="bandtext">${esc(T.bandText[scan.band])}</p>
       ${delta !== null ? `<span class="delta ${delta <= 0 ? 'down' : 'up'}">${delta > 0 ? '+' : ''}${delta} ${U.since}</span>` : ''}
-      <div class="meta">${esc(scan.words)} ${esc(T.words)} · ${esc(T.lang)}: ${esc(scan.lang)}${scan.files ? ` · ${scan.files} ${esc(T.files)}` : ''} · ${esc(T.scanId)} ${esc(scan.id)}</div>
+      <div class="meta">${esc(scan.words)} ${esc(T.words)} · ${esc(T.lang)}: ${esc(scan.lang)}${scan.files ? ` · ${scan.files} ${esc(T.files)}` : ''}${pageRes.length ? ` · ${pageRes.length} ${esc(U.pagesWord.toLowerCase())}` : ''} · ${esc(T.scanId)} ${esc(scan.id)}</div>
     </div>
   </div>
 
@@ -403,8 +447,8 @@ footer .wrap{padding-block:18px 32px}
   <section class="block">
     <h2>${U.findings} <span class="progress">(${issues.length})</span></h2>
     <p class="lead">${U.findingsNote}</p>
-    ${issues.length ? issues.slice(0, 8).map((f, i) => findingItem(f, lang, U, i < 2)).join('') : `<p>${U.none}</p>`}
-    ${issues.length > 8 ? `<details class="more"><summary>${U.more(issues.length - 8)}</summary>${issues.slice(8).map((f) => findingItem(f, lang, U)).join('')}</details>` : ''}
+    ${issues.length ? issues.slice(0, 8).map((f, i) => findingItem(f, lang, U, i < 2, scan)).join('') : `<p>${U.none}</p>`}
+    ${issues.length > 8 ? `<details class="more"><summary>${U.more(issues.length - 8)}</summary>${issues.slice(8).map((f) => findingItem(f, lang, U, false, scan)).join('')}</details>` : ''}
   </section>
 
   ${strengths.length ? `<section class="block"><h2>${U.strengths}</h2><p class="lead">${U.strengthsNote}</p><ul class="plain">${strengths.map((f) => `<li><span class="good mono">${fmt(f.pts)}</span> ${esc(pick(f.title, lang))}: <code>${esc((f.evidence || []).join(', '))}</code></li>`).join('')}</ul></section>` : ''}
@@ -427,6 +471,7 @@ footer .wrap{padding-block:18px 32px}
   <p class="hint">${U.promptNote}</p>
   <textarea id="prompt-text" hidden readonly>${esc(prompt)}</textarea>
 </section>
+${pagesHtml}
 </main>
 <footer><div class="wrap">${esc(U.generated(dateStr))}</div></footer>
 
@@ -440,7 +485,7 @@ footer .wrap{padding-block:18px 32px}
   function show(id){ tabs.forEach(t => { const on = t.getAttribute('aria-controls') === id; t.setAttribute('aria-selected', on); document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
     if (history.replaceState) history.replaceState(null, '', '#' + id); }
   tabs.forEach(t => t.addEventListener('click', () => show(t.getAttribute('aria-controls'))));
-  if (location.hash === '#plan') show('plan');
+  if (location.hash === '#plan' || location.hash === '#pages') show(location.hash.slice(1));
 
   const state = store.get();
   const boxes = [...document.querySelectorAll('input[type=checkbox][data-id]')];
@@ -460,7 +505,7 @@ footer .wrap{padding-block:18px 32px}
     if (btn.dataset.copy === 'answers') {
       const lines = [...document.querySelectorAll('textarea[data-q]')].filter(t => t.value.trim()).map(t => '- ' + t.dataset.q + '\\n  ' + t.value.trim().replace(/\\n/g, '\\n  '));
       copy(lines.join('\\n'), status);
-    } else if (btn.dataset.copy === 'fix') copy(FIX[btn.dataset.fid] || '', status);
+    } else if (btn.dataset.copy === 'fix') copy(FIX[btn.dataset.fid] || FIX[btn.dataset.fid.split('|')[0] + '|'] || '', status);
     else copy(document.getElementById('prompt-text').value, status);
   }));
 })();

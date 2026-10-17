@@ -17,7 +17,10 @@ const L = {
     issues: 'Findings, highest impact first', strengths: 'What already helps (lowers the score)', builder: 'Builder traces',
     evidence: 'Evidence', where: 'Where', fix: 'Fix', steps: 'Steps', example: 'Example', doneWhen: 'Done when', needsFacts: 'needs real facts from the owner', page: 'page',
     effort: { quick: 'quick fix', rewrite: 'rewrite', redesign: 'redesign', replace: 'replace' },
-    pages: 'Pages', notes: 'Notes', next: 'Next step',
+    pages: 'Pages', notes: 'Notes', next: 'Next step', failed: 'failed', issuesCol: 'Findings', topCol: 'Biggest problems',
+    pagesLead: 'Every page scanned, worst first. The site score is half the average page (the home page counts double, legal and sign-in pages are left out) and half the worst page.',
+    onPages: (n) => `on ${n} page${n === 1 ? '' : 's'}`,
+    pageNext: (id) => `For one page's full report with its own steps, call \`slop_page\` with \`scan_id: "${id}"\` and the page path.`,
     nextText: (id) => `Call \`slop_rescue_plan\` with \`scan_id: "${id}"\` for a prioritised transformation plan, then re-scan to measure the change.`,
     capped: 'Signals concentrate in one or two areas, so the score is capped at 45.',
     note: {
@@ -26,6 +29,9 @@ const L = {
       'render-unavailable': (n) => `Could not render the page with a local browser (${n.reason}).`,
       'no-files': 'No source files found. Check the folder path.',
       'skipped-large': (n) => `${n.count} files over 400 KB were skipped.`,
+      sitemap: (n) => `Found ${n.count} pages in the sitemap.`,
+      'crawl-limit': (n) => `Stopped at ${n.max} pages; ${n.left} more were found. Use pages: 200 (CLI: --pages all) to scan more.`,
+      'crawl-time': (n) => `Stopped after ${n.seconds} s with ${n.done} pages scanned. Scan again with fewer pages, or from the CLI for a longer run.`,
     },
     none: 'None.',
     compare: 'Before / after', before: 'Before', after: 'After', change: 'Change', resolved: 'Resolved', remaining: 'Still open', newIssues: 'New',
@@ -45,7 +51,10 @@ const L = {
     issues: 'Bulgular, etkisi en yüksekten', strengths: 'Şimdiden işe yarayanlar (skoru düşürür)', builder: 'Üretici izleri',
     evidence: 'Kanıt', where: 'Konum', fix: 'Düzeltme', steps: 'Adımlar', example: 'Örnek', doneWhen: 'Bitti sayılır', needsFacts: 'sahibinden gerçek bilgi gerekir', page: 'sayfa',
     effort: { quick: 'hızlı düzeltme', rewrite: 'yeniden yazım', redesign: 'yeniden tasarım', replace: 'değiştirme' },
-    pages: 'Sayfalar', notes: 'Notlar', next: 'Sonraki adım',
+    pages: 'Sayfalar', notes: 'Notlar', next: 'Sonraki adım', failed: 'açılamadı', issuesCol: 'Bulgu', topCol: 'En büyük sorunlar',
+    pagesLead: 'Taranan her sayfa, en kötüden başlayarak. Site skorunun yarısı ortalama sayfadan (ana sayfa iki kat sayılır, yasal metin ve giriş sayfaları hariç), yarısı en kötü sayfadan gelir.',
+    onPages: (n) => `${n} sayfada`,
+    pageNext: (id) => `Tek bir sayfanın kendi adımlarıyla tam raporu için \`slop_page\` aracını \`scan_id: "${id}"\` ve sayfa yoluyla çağırın.`,
     nextText: (id) => `Öncelik sıralı dönüşüm planı için \`slop_rescue_plan\` aracını \`scan_id: "${id}"\` ile çağırın, sonra değişimi ölçmek için yeniden tarayın.`,
     capped: 'İşaretler bir iki alanda toplandığı için skor 45 ile sınırlandı.',
     note: {
@@ -54,6 +63,9 @@ const L = {
       'render-unavailable': (n) => `Sayfa yerel tarayıcıyla render edilemedi (${n.reason}).`,
       'no-files': 'Kaynak dosya bulunamadı. Klasör yolunu kontrol edin.',
       'skipped-large': (n) => `400 KB üstündeki ${n.count} dosya atlandı.`,
+      sitemap: (n) => `Site haritasında ${n.count} sayfa bulundu.`,
+      'crawl-limit': (n) => `${n.max} sayfada durdu; ${n.left} sayfa daha bulundu. Daha fazlası için pages: 200 (komut satırında --pages all) kullanın.`,
+      'crawl-time': (n) => `${n.seconds} saniye sonra ${n.done} sayfa taranmışken durdu. Daha az sayfayla ya da komut satırından daha uzun tarayın.`,
     },
     none: 'Yok.',
     compare: 'Önce / sonra', before: 'Önce', after: 'Sonra', change: 'Değişim', resolved: 'Çözülen', remaining: 'Açık kalan', newIssues: 'Yeni',
@@ -88,15 +100,24 @@ export function renderReport(r, { lang = 'en', maxFindings = 25, maxLocations = 
   if (r.capped) out.push(`\n_${T.capped}_`);
 
   if (r.pages && r.pages.length > 1) {
-    out.push(`\n## ${T.pages}`);
-    for (const p of r.pages) out.push(`- \`${p.path}\` ${p.error ? `— ${p.error}` : `${p.total}/100 · ${T.bands[p.band]} · ${p.words} ${T.words}`}`);
+    const okPages = r.pages.filter((p) => !p.error).sort((a, b) => b.total - a.total);
+    const bad = r.pages.filter((p) => p.error);
+    out.push(`\n## ${T.pages} (${okPages.length}${bad.length ? ` + ${bad.length} ${T.failed}` : ''})`);
+    out.push(T.pagesLead);
+    out.push('');
+    out.push(`| ${T.page} | ${T.score} | ${T.issuesCol} | ${T.topCol} |`);
+    out.push('|---|---|---|---|');
+    const titleOf = (id) => pick(r.findings.find((f) => f.id === id)?.title, lang) || id;
+    for (const p of okPages.slice(0, 40)) out.push(`| \`${p.path}\` | ${p.total} · ${T.bands[p.band]} | ${p.issues ?? ''} | ${(p.top || []).map(titleOf).join(', ')} |`);
+    if (okPages.length > 40) out.push(`\n… +${okPages.length - 40}`);
+    for (const p of bad.slice(0, 10)) out.push(`- \`${p.path}\` — ${p.error}`);
   }
 
   const issues = r.findings.filter((f) => f.kind === 'issue');
   out.push(`\n## ${T.issues}`);
   if (!issues.length) out.push(T.none);
   issues.slice(0, maxFindings).forEach((f, i) => {
-    const tags = [T.cats[f.cat], T.effort[f.effort] || f.effort, f.needsFacts ? T.needsFacts : null, f.page ? `${T.page} ${f.page}` : null].filter(Boolean).join(' · ');
+    const tags = [T.cats[f.cat], T.effort[f.effort] || f.effort, f.needsFacts ? T.needsFacts : null, f.page ? `${T.page} ${f.page}` : null, f.pageCount ? T.onPages(f.pageCount) : null].filter(Boolean).join(' · ');
     out.push(`\n### ${i + 1}. ${pick(f.title, lang)} \`${sign(f.pts)}\``);
     out.push(`_${tags}_ · id: \`${f.id}\``);
     if (f.detail) out.push(`\n${pick(f.detail, lang)}`);
@@ -111,6 +132,7 @@ export function renderReport(r, { lang = 'en', maxFindings = 25, maxLocations = 
       for (const l of locs.slice(0, maxLocations)) out.push(`- \`${l.file}:${l.line}\`${l.snippet ? ` \`${String(l.snippet).replace(/`/g, "'")}\`` : ''}`);
       if (locs.length > maxLocations) out.push(`- … +${locs.length - maxLocations}`);
     }
+    if (f.pages?.length && f.pageCount > 0 && r.kind === 'site') out.push(`\n**${T.pages}:** ${f.pages.slice(0, 8).map((x) => `\`${x}\``).join(', ')}${f.pages.length > 8 ? ` … +${f.pages.length - 8}` : ''}`);
     if (f.fix) out.push(`\n**${T.fix}:** ${pick(f.fix, lang)}`);
     if (f.steps?.length && i < 12) {
       out.push(`\n**${T.steps}:**`);
@@ -138,7 +160,7 @@ export function renderReport(r, { lang = 'en', maxFindings = 25, maxLocations = 
       out.push(`- ${typeof v === 'function' ? v(n) : v || n.code}`);
     }
   }
-  out.push(`\n## ${T.next}\n${T.nextText(r.id)}`);
+  out.push(`\n## ${T.next}\n${T.nextText(r.id)}${r.kind === 'site' ? `\n${T.pageNext(r.id)}` : ''}`);
   return out.join('\n');
 }
 

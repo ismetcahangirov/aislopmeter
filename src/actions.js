@@ -262,6 +262,70 @@ const A = {
     done: t('No badge floats above a headline.', 'Hiçbir başlığın üstünde rozet yok.'),
   },
 
+  'headline-formula': {
+    steps: [
+      t('Write down, in one sentence, what the product does and for whom, as if telling a friend.', 'Ürünün ne yaptığını ve kimin için olduğunu bir arkadaşınıza anlatır gibi tek cümleyle yazın.'),
+      t('Add one concrete detail only you can say: a number, a place, a name, a price.', 'Sadece sizin söyleyebileceğiniz tek somut detay ekleyin: rakam, yer, isim, fiyat.'),
+      t('Use that as the headline; move any slogan to the line below, or drop it.', 'Başlık olarak onu kullanın; slogan varsa alt satıra alın ya da silin.'),
+    ],
+    done: t('A stranger reading only the headline knows what you sell.', 'Sadece başlığı okuyan biri ne sattığınızı biliyor.'),
+    example: t('Before: "Your all-in-one workspace for modern teams." After: "Shared to-do lists for agencies of 5 to 50 people, from $6 a seat."', 'Önce: "Modern ekipler için hepsi bir arada çalışma alanı." Sonra: "5-50 kişilik ajanslar için ortak görev listesi, kişi başı 150 TL."'),
+  },
+  'stock-microcopy': {
+    steps: [
+      t('Go through the phrases listed under evidence one by one.', 'Kanıttaki kalıpları tek tek gözden geçirin.'),
+      t('Rename buttons by what happens next ("See a sample report", "Book 20 minutes with Ayşe").', 'Butonları tıklayınca ne olacağına göre adlandırın ("Örnek raporu gör", "Ayşe ile 20 dakika ayarla").'),
+      t('Delete reassurance lines every competitor also has ("No credit card required", "Trusted by…") unless they are true and matter here.', 'Her rakipte olan güven cümlelerini ("Kredi kartı gerekmez", "Bize güvenenler…") doğru ve burada önemli değilse silin.'),
+    ],
+    done: t('No button or line on the page could be pasted onto a competitor\'s site unchanged.', 'Sayfadaki hiçbir buton ya da satır bir rakibin sitesine aynen yapıştırılamaz.'),
+  },
+  'landing-template': {
+    steps: [
+      t('List the sections in order and ask for each: would a visitor miss it if it were gone?', 'Bölümleri sırayla listeleyin ve her biri için sorun: kaldırılsa ziyaretçi eksikliğini hisseder mi?'),
+      t('Delete the ones nobody would miss (logo strip without real customers, stats row, generic FAQ).', 'Kimsenin eksikliğini hissetmeyeceklerini silin (gerçek müşterisi olmayan logo şeridi, istatistik satırı, genel SSS).'),
+      t('Give the remaining ones a form that fits: a real screenshot, a comparison table, one customer story with a name and a number.', 'Kalanlara uygun bir biçim verin: gerçek ekran görüntüsü, karşılaştırma tablosu, isim ve rakam içeren tek müşteri hikâyesi.'),
+    ],
+    done: t('The page has fewer sections, and each one shows something only this product has.', 'Sayfada daha az bölüm var ve her biri sadece bu ürünün sahip olduğu bir şeyi gösteriyor.'),
+  },
+  'portfolio-template': {
+    steps: [
+      t('Put two or three projects at the top: screenshot, the problem, what you built, the stack, a link.', 'En üste iki üç proje koyun: ekran görüntüsü, problem, ne yaptığınız, teknoloji, link.'),
+      t('Remove the typing effect and the custom cursor.', 'Daktilo efektini ve özel imleci kaldırın.'),
+      t('Replace the skill boxes with the tools named inside each project.', 'Yetenek kutularının yerine her projenin içinde kullanılan araçları yazın.'),
+    ],
+    done: t('Someone can judge your work in 30 seconds without reading a list of skills.', 'Biri yetenek listesi okumadan 30 saniyede işinizi değerlendirebiliyor.'),
+  },
+  'no-work-shown': {
+    steps: [
+      t('Pick your two or three best projects (work, side projects, open source, videos).', 'En iyi iki üç projenizi seçin (iş, yan proje, açık kaynak, video).'),
+      t('For each: a screenshot, one line on the problem, what you did, the stack, and a link.', 'Her biri için: ekran görüntüsü, problemi anlatan bir satır, ne yaptığınız, teknoloji ve link.'),
+    ],
+    done: t('Every claim on the page has a project that proves it.', 'Sayfadaki her iddianın onu kanıtlayan bir projesi var.'),
+  },
+  'default-palette': {
+    steps: [
+      t('Pick 4-6 colours from something real in your subject (a product photo, your logo, the place).', 'Konunuzdaki gerçek bir şeyden 4-6 renk seçin (ürün fotoğrafı, logonuz, mekân).'),
+      t('Define them once as named variables (--ink, --paper, --accent…) and replace the Tailwind hex values listed.', 'Bunları bir kez isimli değişkenler olarak tanımlayın (--ink, --paper, --accent…) ve listelenen Tailwind renklerini değiştirin.'),
+    ],
+    done: t('No colour on the page comes straight from Tailwind\'s default palette.', 'Sayfadaki hiçbir renk doğrudan Tailwind\'in varsayılan paletinden gelmiyor.'),
+  },
+  'accent-underline': {
+    steps: [t('Remove the ::after bar under section titles.', 'Bölüm başlıklarının altındaki ::after çizgisini kaldırın.'), t('Separate sections with spacing and type size instead.', 'Bölümleri bunun yerine boşluk ve yazı boyutuyla ayırın.')],
+    done: t('Headings stand on their own.', 'Başlıklar kendi başına duruyor.'),
+  },
+  'stock-icons': {
+    steps: [t('Remove icons that only decorate a heading.', 'Sadece başlığı süsleyen ikonları kaldırın.'), t('Keep icons where they help scanning, and draw or pick ones that show this product.', 'Taramaya yardım ettiği yerlerde ikon bırakın; bu ürünü gösteren ikonlar çizin ya da seçin.')],
+    done: t('No ✨ Sparkles icon and no icon that could sit on any other site.', '✨ Sparkles ikonu ve başka herhangi bir sitede durabilecek ikon yok.'),
+  },
+  'client-shell': {
+    steps: [
+      t('Check the page with JavaScript turned off (or "View source"): if it is empty, search engines see it empty too.', 'Sayfaya JavaScript kapalıyken (ya da "Kaynağı görüntüle" ile) bakın: boşsa arama motorları da boş görüyor.'),
+      t('Prerender the public pages (vite-plugin-ssg or react-snap, Next.js static export, or move them to Astro).', 'Herkese açık sayfaları önceden oluşturun (vite-plugin-ssg ya da react-snap, Next.js static export ya da Astro\'ya taşıyın).'),
+      t('At minimum, put a real title, description and the main heading and text into index.html.', 'En azından index.html içine gerçek başlık, açıklama, ana başlık ve metni koyun.'),
+    ],
+    done: t('"View source" shows the page\'s words.', '"Kaynağı görüntüle" sayfanın kelimelerini gösteriyor.'),
+  },
+
   /* ---------- unfinished details ---------- */
   placeholder: {
     steps: [t('Open each listed location; every lorem ipsum, [Your name], John Doe or 555 number is listed.', 'Listelenen her konumu açın; her lorem ipsum, [Adınız], John Doe ya da sahte numara listelenmiş.'), t('Replace each with the real thing, or delete the whole block.', 'Her birini gerçeğiyle değiştirin ya da bloğun tamamını silin.')],
@@ -378,6 +442,15 @@ export function fixPrompt(f, scan, lang = 'en') {
   if (f.detail) out.push(pick(f.detail, lang));
   const ev = (f.evidence || []).filter(Boolean).slice(0, 5);
   if (ev.length) { out.push(''); out.push(tr ? 'Kanıt:' : 'Evidence:'); for (const e of ev) out.push(`- ${String(e).replace(/\s+/g, ' ')}`); }
+  if (f.pages?.length && scan.kind === 'site') {
+    const base = scan.url || scan.target;
+    const abs = (p) => { try { return new URL(p, base).toString(); } catch { return p; } };
+    out.push(''); out.push(tr ? `Sayfalar (${f.pages.length}):` : `Pages (${f.pages.length}):`);
+    for (const p of f.pages.slice(0, 25)) out.push(`- ${abs(p)}`);
+    if (f.pages.length > 25) out.push(`- … +${f.pages.length - 25}`);
+  } else if (f.page && scan.kind === 'site') {
+    out.push(''); out.push(`${tr ? 'Sayfa' : 'Page'}: ${(() => { try { return new URL(f.page, scan.url || scan.target).toString(); } catch { return f.page; } })()}`);
+  }
   const ls = (f.locations || []).filter(Boolean);
   if (ls.length) { out.push(''); out.push(tr ? 'Konumlar:' : 'Locations:'); for (const l of ls) out.push(`- ${l.file}:${l.line}${l.snippet ? `  ${l.snippet}` : ''}`); }
   out.push('');

@@ -23,24 +23,25 @@ Three findings from the research shape the design:
    - So AI Slop Meter scores with deterministic, explainable rules. Your AI is only used to *fix* what was found, never to grade it.
 3. **The look is a cluster, not a single tell.** Krebs' scan of about 500 sites found an average of about 2.2 template patterns per site.
    - A purple brand alone is not slop.
-   - So the total score is capped at 45 unless at least three of the four main areas show real problems.
+   - So the total score is capped at 35 when only one of the four main areas shows real problems, and at 60 when two do.
 
 ## Scoring
 
 | Category | Max | What it covers |
 |---|---|---|
-| Substance | 35 | Specific information, claims you can check, real proof, trust signals |
-| Language patterns | 25 | Clichés, rhetorical tics, formulaic structure |
-| Template design | 20 | The default look of AI page builders |
+| Substance | 30 | Specific information, claims you can check, real proof, trust signals |
+| Language patterns | 22 | Clichés, rhetorical tics, formulaic structure, headline formulas, stock microcopy |
+| Template design | 28 | The default look of AI page builders, the standard section templates, pasted effects |
 | Unfinished details | 15 | Leftovers, placeholders, broken basics |
 | Builder traces | 5 | Fingerprints of Lovable, Bolt, v0, Replit, Base44 (shown as information) |
 
 How the numbers work:
 - **Points.** Each finding adds points. Each category is capped at its maximum.
 - **Strengths.** These lower the substance score by up to 10. They include a real address, named people, prices, legal details, an about page and links to independent reviews.
-- **Concentration cap.** If fewer than three of the four main areas reach 25% of their maximum, the total is capped at 45.
+- **Concentration cap.** An area counts as active when it reaches 25% of its maximum. With one active area the total is capped at 35, with two at 60.
+- **Linked files.** For URLs and `.html` files the page's own stylesheets and scripts (same site, no well-known libraries) are read too, so a purple gradient in `style.css` counts and points at its line.
 - **Bands:** 0–19 clean, 20–39 trace amounts, 40–59 noticeable, 60–79 heavy, 80–100 pure slop.
-- **Multi-page scans:** 0.7 × the mean of the page scores plus 0.3 × the worst page, plus checks across pages such as duplicate titles.
+- **Multi-page scans:** 0.5 × the weighted mean of the page scores (home page ×2; privacy, terms, sign-in and pages under 80 words left out) plus 0.5 × the worst page, plus checks across pages such as duplicate titles.
 
 ## Substance
 
@@ -94,12 +95,27 @@ How the numbers work:
 | `default-theme` | shadcn/ui default theme tokens left untouched. | Krebs (shadcn defaults 23.5%); shadcn theming docs. |
 | `cream-terracotta`, `acid-on-black` | The "anti-purple" fallbacks: cream, serif and terracotta; or near-black with one neon accent. | Anthropic frontend-design skill; CodeMySpec; Impeccable. |
 | `rounded-everything` | A large radius on 10 or more elements. | Alan West; CodeMySpec. |
+| `landing-template` | At least 5 of the 10 standard sections: hero with two generic buttons, logo strip, feature grid, "how it works", testimonials or ★★★★★, stats row (10K+, 99.9%, 24/7), three pricing plans with "Most popular", FAQ accordion, "Ready to…" closing CTA, Product/Company/Resources/Legal footer. 5 → +2, up to +7. | Sailop, 21 signs (2026); Slopdar; 925 Studios. |
+| `portfolio-template` | At least 3 of: "Hi, I'm" greeting, typing job titles, About/Skills/Experience/Contact menu, "3+ years" cards, Frontend/Backend skill boxes, timeline. | CodeMySpec; hustletoai. |
+| `default-palette` | 5 or more Tailwind default palette colours written as hex in hand-made CSS (slate-400, purple-500, blue-500…), or 10+ default colour classes, with no named brand tokens. | Sailop signs 1 and 19. |
+| `accent-underline` | A short coloured `::after` bar (20–129px × 2–6px) under section titles. | Theme-template convention. |
+| `stock-icons` | Six or more Lucide icons, or Lucide with the Sparkles icon. | Sailop sign 20; Slopdar. |
+| `gimmick-effects` (extended) | Also typing effects (`isDeleting`, Typed.js), custom cursors, particles, floating shapes, tilt cards, glitch text, in HTML, CSS or JS. | 925 Studios ("overcorrection"). |
 
 ## Unfinished details
 
 These are placeholders (lorem, "Company Name", John Doe, `[Insert …]`, example.com), placeholder images, narrating section comments (`<!-- Hero Section -->`, `{/* Features */}`), links to `#` or to bare social roots, several H1s, missing or generic alt text, raw markdown, chatbot sentences ("Certainly! Here is…", "Umarım yardımcı olur"), chat citation residue (`utm_source=chatgpt.com`, `oaicite`, `turn0search1`), a stale copyright year, a starter-template title or description ("Vite + React + TS", "Lovable Generated Project"), the default favicon, missing metadata, a leftover `noindex`, hidden instructions aimed at AI assistants, gray-400 text on white (≈2.5:1), and removed focus outlines.
 
 Sources: hustletoai (vibe-coded checklist), kaplich (100-site analysis), Google gen-AI guidance (fact-check titles, descriptions and alt text too), Google spam policies (cloaking applies to AI Overviews, May 2026), WCAG 2.2.
+
+New in this version (language and finish):
+
+| Check | How it is detected | Notes and sources |
+|---|---|---|
+| `headline-formula` | h1/h2 matching formulas such as "Supercharge your…", "…, reimagined", "Your all-in-one…", "Build faster", "for the modern…", "Everything you need to…", "Yapay zekâ destekli…". | Sailop sign 13; 925 Studios. |
+| `stock-microcopy` | Four or more stock phrases: "Get started", "Watch demo", "No credit card required", "Cancel anytime", "Trusted by", "Most popular", "All rights reserved", "Kredi kartı gerekmez"… | Sailop sign 13. |
+| `no-work-shown` (substance) | A portfolio template with no project images and no project or code links. | hustletoai ("no human surfaces"). |
+| `client-shell` (unfinished) | The server sent an empty `#root` shell; the words only appear after JavaScript runs. | Slopdar; hustletoai (SEO). |
 
 ## Builder traces
 
@@ -143,4 +159,8 @@ These count only toward the 5-point information category. Having no builder mark
 - Google Search Central: helpful content; using generative AI content (Oct 2026); spam policies (Aug 2026); review snippets; image metadata
 - Google Search Quality Rater Guidelines (Sept 2025 edition)
 - FTC 16 CFR Part 465 (2024); UK DMCC Act 2024 (in force April 2025)
+- Sailop: Detect an AI-generated site in 30 seconds, 21 objective signs (2026)
+- Slopdar: How to tell if a website is AI-generated
+- 925 Studios: AI slop web design guide (2026)
+- hustletoai: How to tell if a website is vibe coded
 - Turkish: howmanywords.app, daktilo1984.com, webtekno.com, marketingturkiye.com.tr

@@ -1,9 +1,9 @@
 // Turn findings into category scores, a total and a band.
 
 export const CATEGORIES = {
-  content: { max: 35 },
-  language: { max: 25 },
-  design: { max: 20 },
+  content: { max: 30 },
+  language: { max: 22 },
+  design: { max: 28 },
   finish: { max: 15 },
   builder: { max: 5 },
 };
@@ -37,7 +37,8 @@ export function finalize(result) {
   // A high score needs evidence in several areas: one loud area alone is a style choice, not slop.
   const active = ['content', 'language', 'design', 'finish'].filter((k) => cats[k].pts >= cats[k].max * 0.25).length;
   let capped = false;
-  if (active < 3 && total > 45) { total = 45; capped = true; }
+  const cap = active <= 1 ? 35 : active === 2 ? 60 : 100;
+  if (total > cap) { total = cap; capped = true; }
   total = Math.round(total);
   const band = BANDS.find((b) => total <= b.max).key;
   for (const f of result.findings) f.severity = severityOf(f.pts);
@@ -45,16 +46,19 @@ export function finalize(result) {
   return Object.assign(result, { cats, total, band, active, capped });
 }
 
-/** Combine several page results into one site result. */
+/** Pages that say little about the site's voice: legal text, sign-in, tiny pages. */
+const UTILITY = /(?:privacy|gizlilik|terms|kosullar|koşullar|kullanim-sartlari|cookie|cerez|çerez|kvkk|legal|imprint|impressum|disclaimer|login|log-in|signin|sign-in|signup|sign-up|register|giris|giriş|kayit|kayıt|404|sitemap|search|arama)/i;
+
+/** Combine several page results into one site result: half the (weighted) average page, half the worst page. */
 export function combinePages(pages) {
+  let counted = pages.filter((p) => !(p.path && UTILITY.test(p.path)) && !(p.words != null && p.words < 80));
+  if (!counted.length) counted = pages;
+  const weight = (p) => (p.path === '/' || p.path === '' ? 2 : 1);
+  const W = counted.reduce((a, p) => a + weight(p), 0);
   const cats = {};
-  for (const k of ORDER) {
-    const vals = pages.map((p) => p.cats[k].pts);
-    cats[k] = { max: CATEGORIES[k].max, pts: vals.reduce((a, b) => a + b, 0) / vals.length };
-  }
-  const totals = pages.map((p) => p.total);
-  const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
-  const total = Math.round(0.7 * mean + 0.3 * Math.max(...totals));
+  for (const k of ORDER) cats[k] = { max: CATEGORIES[k].max, pts: counted.reduce((a, p) => a + p.cats[k].pts * weight(p), 0) / W };
+  const mean = counted.reduce((a, p) => a + p.total * weight(p), 0) / W;
+  const total = Math.round(0.5 * mean + 0.5 * Math.max(...counted.map((p) => p.total)));
   const band = BANDS.find((b) => total <= b.max).key;
-  return { cats, total, band };
+  return { cats, total, band, counted: counted.length };
 }

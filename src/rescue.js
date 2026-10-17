@@ -83,12 +83,13 @@ const COPY_STEPS = [
 ];
 
 function simulate(r, removeIds) {
-  const left = r.findings.filter((f) => !removeIds.has(f.id + '|' + (f.page || ''))).map((f) => ({ ...f }));
-  if (r.kind === 'site' && r.pages?.length) {
-    // a site score is a blend of page scores, so re-score each page and blend again
-    const pages = r.pages.filter((p) => !p.error).map((p) => finalize({ findings: left.filter((f) => f.page === p.path) }));
-    if (pages.length) return combinePages(pages).total;
+  if (r.kind === 'site' && r.pageResults?.length) {
+    // a site score is a blend of page scores: remove the fixed findings from every page, re-score, blend again
+    const ids = new Set([...removeIds].map((k) => k.split('|')[0]));
+    const pages = r.pageResults.map((p) => finalize({ findings: p.findings.filter((f) => !ids.has(f.id)).map((f) => ({ ...f })) }));
+    return combinePages(pages).total;
   }
+  const left = r.findings.filter((f) => !removeIds.has(f.id + '|' + (f.page || ''))).map((f) => ({ ...f }));
   return finalize({ ...r, findings: left }).total;
 }
 const key = (f) => f.id + '|' + (f.page || '');
@@ -155,7 +156,7 @@ export function renderRescuePlan(plan, { lang = 'en' } = {}) {
       out.push('');
       for (const f of ph.steps) {
         const loc = (f.locations || []).slice(0, 4).map((l) => `\`${l.file}:${l.line}\``).join(', ');
-        out.push(`- **${pick(f.title, lang)}** (\`${f.id}\`, +${Math.round(f.pts * 10) / 10}${f.page ? `, ${f.page}` : ''})${loc ? ` — ${loc}` : ''}`);
+        out.push(`- **${pick(f.title, lang)}** (\`${f.id}\`, +${Math.round(f.pts * 10) / 10}${f.page ? `, ${f.page}` : ''}${f.pageCount > 1 ? `, ${f.pageCount} ${lang === 'tr' ? 'sayfa' : 'pages'}` : ''})${loc ? ` — ${loc}` : ''}`);
         if (f.fix) out.push(`  ${pick(f.fix, lang)}`);
         const ev = (f.evidence || []).filter(Boolean).slice(0, 2);
         if (ev.length) out.push(`  ${tr ? 'Kanıt' : 'Evidence'}: ${ev.join(' / ')}`);

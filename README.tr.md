@@ -1,5 +1,7 @@
 # AI Slop Meter
 
+**Türkçe** · [English](README.md)
+
 **Bir sitedeki AI slop'u ölç. Sonra temizle.**
 
 AI Slop Meter bir web sitesini ya da web projesini *slop* açısından puanlar: genel geçer metin, AI site araçlarının varsayılan görünümü ve özensiz detaylar.
@@ -10,9 +12,22 @@ AI Slop Meter bir web sitesini ya da web projesini *slop* açısından puanlar: 
 
 Kendi bilgisayarında **MCP sunucusu** ve **komut satırı aracı** olarak çalışır. API anahtarı ya da hesap gerekmez. Taramasını istediğin siteye yapılan istek dışında hiçbir yere veri gönderilmez.
 
-[English README](README.md)
+## Hızlı başlangıç (2 dakika)
 
-| Önce: 69 / 100, yoğun slop | Sonra: 1 / 100, temiz |
+1. Bilgisayarında [Node.js](https://nodejs.org) 20 ya da üstü kurulu olsun.
+2. Claude Code kullanıyorsan terminale yapıştır:
+   ```bash
+   claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp
+   ```
+   Claude Desktop, Cursor ya da başka bir araç kullanıyorsan aşağıdaki [kurulum](#mcp-sunucusu-olarak-kurulum) bölümüne bak.
+3. Yapay zekâna yaz: **"https://sitem.com adresini AI slop açısından tara ve ne yapmam gerektiğini göster."**
+
+Hiçbir şey kurmadan denemek için tek komut yeter:
+```bash
+npx -y github:omergocmen/aislopmeter https://sitem.com --open --lang tr
+```
+
+| Önce: 83 / 100, saf slop | Sonra: 1 / 100, temiz |
 |---|---|
 | ![Önce](docs/img/before.png) | ![Sonra](docs/img/after.png) |
 
@@ -20,7 +35,7 @@ Kendi bilgisayarında **MCP sunucusu** ve **komut satırı aracı** olarak çal�
 
 ## Ne yapar
 
-1. **Tarar.** Bir URL'yi, bir proje klasörünü (Next.js, Vite/React, Astro, Vue, Svelte, düz HTML, Markdown içerik…) ya da tek bir `.html` dosyasını tarar.
+1. **Tarar.** Bütün bir web sitesini, bir proje klasörünü (Next.js, Vite/React, Astro, Vue, Svelte, düz HTML, Markdown içerik…) ya da tek bir `.html` dosyasını tarar. Sitelerde sayfaları `sitemap.xml` ve iç linklerden bulur (`robots.txt`'ye uyar), varsayılan olarak 30 sayfaya kadar tarar (`--pages all` ile 200'e kadar) ve **her sayfaya kendi skorunu ve yapılacaklar listesini** verir. Birçok sayfada tekrarlanan bir sorun tek maddede, bulunduğu sayfaların listesiyle gösterilir.
 2. **Puanlar.** Araştırmaya dayalı kontrollerle beş alana puan verir ([kriterler ve kaynaklar](docs/CRITERIA.md)):
    - **İçerik özü:** somut bilgi, doğrulanabilir iddia, gerçek kanıt
    - **Dil kalıpları:** klişeler, "sadece X değil, Y", içi boş önem iddiaları
@@ -41,6 +56,7 @@ Kendi bilgisayarında **MCP sunucusu** ve **komut satırı aracı** olarak çal�
 5. **Gösterir.** Sonucu iki ekranlı görsel bir raporda sunar:
    - **Rapor** ekranında skor ve kanıtlı bulgular yer alır.
    - **Yapılacaklar** ekranı üç hızlı kazanımla başlayan bir kontrol listesi ve sorulara cevap yazılacak alanlar içerir.
+   - **Sayfalar** ekranı (site taramalarında) her sayfayı en kötüden başlayarak kendi skoru ve bulgularıyla listeler.
 6. **Yeniden ölçer.** Her değişiklikten sonra önce/sonra tablosu verir.
 
 | Rapor | Yapılacaklar |
@@ -55,22 +71,24 @@ Her bulgu aynı "ne yapmalısın" kutusuyla açılır:
 
 Node.js 20 ya da üstü gerekir.
 
+Paket şimdilik doğrudan GitHub'dan çalışıyor (`github:omergocmen/aislopmeter`). İlk çalıştırmada indirip kurduğu için birkaç saniye sürebilir.
+
 **Claude Code**
 ```bash
-claude mcp add aislopmeter -- npx -y aislopmeter mcp
+claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp
 ```
 
 **Claude Desktop**: `claude_desktop_config.json` dosyasına ekle:
 ```json
 {
   "mcpServers": {
-    "aislopmeter": { "command": "npx", "args": ["-y", "aislopmeter", "mcp"] }
+    "aislopmeter": { "command": "npx", "args": ["-y", "github:omergocmen/aislopmeter", "mcp"] }
   }
 }
 ```
 
 **Cursor** (`.cursor/mcp.json`), **Gemini CLI** (`~/.gemini/settings.json`), **Windsurf** ve diğerleri: aynı `mcpServers` bloğunu kullan.
-**VS Code** (`.vscode/mcp.json`): `"servers": { "aislopmeter": { "type": "stdio", "command": "npx", "args": ["-y", "aislopmeter", "mcp"] } }`.
+**VS Code** (`.vscode/mcp.json`): `"servers": { "aislopmeter": { "type": "stdio", "command": "npx", "args": ["-y", "github:omergocmen/aislopmeter", "mcp"] } }`.
 
 ## Kullanım
 
@@ -94,9 +112,10 @@ Küçük adımlarla ilerlemek istersen **`fix` prompt'u** (`/mcp__aislopmeter__f
 
 | Araç | Ne yapar |
 |---|---|
-| `slop_scan` | URL (`pages` ile iç linkleri de tarar), klasör ya da `.html` dosyası tarar. Görsel raporu yazar, `open_report` ile açar. Aynı hedef yeniden tarandığında otomatik karşılaştırır. |
+| `slop_scan` | Web sitesini (`pages` kadar sayfa, varsayılan 30, en fazla 200), klasörü ya da `.html` dosyasını tarar. Görsel raporu yazar, `open_report` ile açar. Aynı hedef yeniden tarandığında otomatik karşılaştırır. |
 | `slop_scan_html` | Yapıştırılmış ya da üretilmiş HTML'i tarar. |
 | `slop_rescue_plan` | Taramayı aşamalı plana çevirir. `keep` ile sahibinin dokunulmasını istemediği şeyler, `target_score` ile hedef skor verilir. |
+| `slop_page` | Site taramasındaki tek bir sayfanın kendi bulguları ve adımlarıyla tam raporu. |
 | `slop_fix` | Tek bir bulgu için adım adım talimat verir: neyin değişeceği, nerede (`dosya:satır`), örnek ve bitti sayılır kontrolü. `finding_id` verilmezse en önemlisini seçer ve diğerlerini listeler. |
 | `slop_report` | Bir taramanın görsel raporunu yazar ya da açar. |
 | `slop_compare` | İki tarama arasında önce/sonra karşılaştırması yapar. |
@@ -105,10 +124,12 @@ Küçük adımlarla ilerlemek istersen **`fix` prompt'u** (`/mcp__aislopmeter__f
 ## Komut satırı
 
 ```bash
-npx aislopmeter https://ornek.com --pages 5        # canlı site, en fazla 5 sayfa
-npx aislopmeter ./projem --plan --lang tr          # proje klasörü ve Türkçe kurtarma planı
-npx aislopmeter ./projem --open                    # görsel raporu yaz ve aç
-npx aislopmeter ./dist/index.html --fail-above 40  # skor 40'ı geçerse CI'ı durdur
+npx -y github:omergocmen/aislopmeter https://ornek.com                  # bütün site, en fazla 30 sayfa
+npx -y github:omergocmen/aislopmeter https://ornek.com --pages all      # en fazla 200 sayfa
+npx -y github:omergocmen/aislopmeter https://ornek.com --pages 1        # sadece bu sayfa
+npx -y github:omergocmen/aislopmeter ./projem --plan --lang tr          # proje klasörü ve Türkçe kurtarma planı
+npx -y github:omergocmen/aislopmeter ./projem --open                    # görsel raporu yaz ve aç
+npx -y github:omergocmen/aislopmeter ./dist/index.html --fail-above 40  # skor 40'ı geçerse CI'ı durdur
 ```
 
 Raporlar `~/.aislopmeter/reports/` klasörüne yazılır. Değiştirmek için `AISLOPMETER_REPORT_DIR` ayarını kullan.
@@ -125,15 +146,15 @@ Her bulgu puan ekler ve her kategorinin bir tavanı vardır:
 
 | Kategori | Tavan |
 |---|---|
-| İçerik özü | 35 |
-| Dil | 25 |
-| Tasarım | 20 |
+| İçerik özü | 30 |
+| Dil | 22 |
+| Tasarım | 28 |
 | Özensiz detaylar | 15 |
 | Üretici izleri | 5 |
 
 Gerçek bir işletmenin varlığını gösteren işaretler skoru düşürür: adres, isimli kişiler, fiyat, yasal bilgi, bağımsız yorum linkleri.
 
-Yüksek skor için en az üç alanda sorun olmalı. Tek bir alan ne kadar yüksek olursa olsun (örneğin mor bir marka rengi), skor 45 ile sınırlanır.
+Yüksek skor için birden fazla alanda sorun olmalı: sadece bir alanda sorun varsa skor 35, iki alanda varsa 60 ile sınırlanır. Sadece mor bir marka rengi asla yoğun slop sayılmaz. Web sitelerinde sayfanın kendi `style.css` ve script dosyaları da okunur.
 
 Bantlar:
 
@@ -155,7 +176,7 @@ Neden yapay zekâ hakem değil de kurallar? Bu konudaki en kapsamlı çalışmad
 ## Gizlilik
 
 Her şey yerelde çalışır.
-- **URL taraması:** yalnızca gösterdiğin sayfaları çeker.
+- **URL taraması:** yalnızca gösterdiğin sitenin sayfalarını çeker, `robots.txt`'ye uyar ve sayfa sınırında durur.
 - **Klasör taraması:** dosyaları yalnızca okur, hiçbirini değiştirmez.
 - **Raporlar:** yalnızca senin bilgisayarına, `~/.aislopmeter/reports/` klasörüne yazılır.
 - **Telemetri yok.**

@@ -65,3 +65,20 @@ test('reports render in both languages', async () => {
 test('url-like and missing targets are told apart', async () => {
   await assert.rejects(scanTarget('definitely-not-a-folder'), /does not look like a URL/);
 });
+
+test('calibration: modern AI-builder pages score high, hand-made pages stay clean', async () => {
+  const saas = await scanTarget(join(here, 'fixtures', 'modern-saas.html'), { now: new Date('2026-10-17') });
+  assert.ok(saas.total >= 55, `modern SaaS template scored ${saas.total}`);
+  assert.ok(saas.findings.some((f) => f.id === 'landing-template'));
+  assert.ok(saas.findings.some((f) => f.id === 'stock-microcopy'));
+  const folio = await scanTarget(join(here, 'fixtures', 'ai-portfolio', 'index.html'), { now: new Date('2026-10-17') });
+  assert.ok(folio.total >= 40, `AI portfolio scored ${folio.total}`);
+  // linked style.css and script.js are read, and findings point into them
+  const pg = folio.findings.find((f) => f.id === 'purple-gradient');
+  assert.ok(pg && pg.locations.some((l) => /style\.css$/.test(l.file)), 'gradient found in style.css');
+  assert.ok(folio.findings.some((f) => f.id === 'gimmick-effects' && f.evidence.includes('typing effect')));
+  for (const clean of [join(here, 'fixtures', 'craft-bakery.html'), join(here, '..', 'examples', 'novaflow', 'after.html'), join(here, '..', 'site', 'index.html')]) {
+    const r = await scanTarget(clean, { now: new Date('2026-10-17') });
+    assert.ok(r.total <= 12, `${clean} scored ${r.total}`);
+  }
+});

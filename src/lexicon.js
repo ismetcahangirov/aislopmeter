@@ -27,6 +27,11 @@ export const SLOP_EN_STRONG = [
   'discover the power of', 'transform the way you', 'start your journey', 'boost your productivity',
   'streamline your workflow', 'streamline workflows', 'like never before', 'at the intersection of', 'a wide range of',
   'a diverse array of', 'empowering', 'empowers', 'empower your', 'actionable insights', 'meaningful insights',
+  // portfolio and agency voice
+  'passionate about', 'my journey', 'scalable solutions', 'cutting-edge technologies', 'modern technologies', 'pixel-perfect',
+  'bring ideas to life', 'bringing ideas to life', 'turning ideas into reality', 'turn your ideas into', 'crafting digital',
+  'digital experiences', 'innovative solutions', 'elegant solutions', 'high-quality solutions', 'tech enthusiast', 'ai enthusiast',
+  'lifelong learner', 'problem solver', 'results-driven', 'detail-oriented',
 ];
 export const SLOP_EN_WEAK = [
   'robust', 'holistic', 'synergy', 'leverage', 'streamline', 'effortless', 'effortlessly', 'innovative', 'comprehensive',
@@ -50,10 +55,16 @@ export const SLOP_TR_STRONG = [
   'gelecek parlak', 'bu yolculukta yanınızdayız', 'bir adım önde', 'rekabette öne', 'işinizi büyütün', 'verimliliğinizi artır',
   'zahmetsizce', 'en son teknoloji', 'son teknoloji ürünü', 'benzersiz deneyim', 'eşsiz deneyim', 'sınırları zorla',
   'fark yaratın', 'değer katın', 'akıllı çözüm',
+  // özgeçmiş, portfolyo ve ajans dili
+  'yazılım yolculuğum', 'yolculuğuma', 'kodlama yolculuğum', 'modern teknolojiler', 'ölçeklenebilir çözümler', 'yenilikçi çözümler',
+  'katma değer', 'fark yaratan', 'tutkuyla', 'tutkulu bir', 'hayallerinizi gerçeğe', 'fikirlerinizi gerçeğe', 'dijital deneyimler',
+  'kullanıcı odaklı çözümler', 'yüksek kaliteli çözümler', 'son teknolojiler', 'teknoloji tutkunu', 'yapay zeka meraklısı',
 ];
 export const SLOP_TR_WEAK = [
   'inovatif', 'keşfedin', 'vazgeçilmez', 'sonuç olarak', 'özetle', 'kısacası', 'güçlendirin', 'dönüştürün', 'kapsamlı',
   'çok yönlü', 'sayısız', 'sürekli gelişen', 'bütüncül', 'ekosistem', 'sinerji', 'vizyoner', 'öncü', 'dönüştürücü',
+  'aktif rol', 'katkıda bulun', 'göz atabilirsiniz', 'yazılım dünyası', 'meraklısı', 'kendimi sürekli', 'sürekli öğren',
+  'kullanıcı dostu', 'modern web', 'çözümler üret', 'deneyimlerimi paylaş',
 ];
 
 /* ---------- inflation (content) ---------- */
@@ -147,7 +158,7 @@ export const BUILDER_MARKS = [
   ['Lovable', /lovable-uploads|data-lov-id|gptengineer\.js|cdn\.gpteng\.co|lovable-tagger|edit with lovable|lovable-badge|lovable generated project|content=["']lovable["']|lovable\.dev\/(?:projects|opengraph)|vite_react_shadcn_ts|gpt-engineer-app/i],
   ['Bolt', /made (?:with|in) bolt|built with bolt|bolt\.new|stackblitz\.io\/bolt|bolt-vite-react-ts/i],
   ['v0', /built with v0|created with v0|v0\.dev|content=["']v0\.app["']|my-v0-project/i],
-  ['Base44', /base44|@base44\/sdk/i],
+  ['Base44', /@base44\/sdk|base44\.app|base44\.com\/(?:apps|api)|(?:made|built) (?:with|on) base44|base44-badge/i],
   ['Replit', /made with replit|replit-badge|replit\.com\/badge|@replit\/vite-plugin|replit-dev-banner/i],
 ];
 
@@ -189,3 +200,46 @@ export const FONT_TREND = /\b(Space[+ _]Grotesk|Instrument[+ _]Serif|Instrument[
 export const SERIF_DISPLAY = /\b(Fraunces|Playfair(?:[+ _]Display)?|Cormorant(?:[+ _]Garamond)?|Lora|Crimson(?:[+ _]Pro|[+ _]Text)?|Newsreader|Instrument[+ _]Serif|DM[+ _]Serif|EB[+ _]Garamond|Libre[+ _]Baskerville)\b/;
 export const GIMMICK_COMPONENTS = /<(Meteors|BackgroundBeams(?:WithCollision)?|Spotlight|SparklesCore|AuroraBackground|BorderBeam|ShimmerButton|AnimatedGradientText|Particles|RetroGrid|DotPattern|GridPattern|TextGenerateEffect|TypewriterEffect(?:Smooth)?|BackgroundGradientAnimation|WavyBackground|LampContainer|ShootingStars|StarsBackground|Vortex|GlowingStarsBackgroundCard|MagicCard|NeonGradientCard)\b/g;
 export const DEFAULT_THEME_TOKENS = /--radius:\s*0\.625rem|--primary:\s*oklch\(0\.205 0 0\)|--foreground:\s*oklch\(0\.145 0 0\)|--muted-foreground:\s*oklch\(0\.556 0 0\)|--primary:\s*222\.2 47\.4% 11\.2%|--foreground:\s*222\.2 84% 4\.9%|--muted-foreground:\s*215\.4 16\.3% 46\.9%/g;
+
+
+/* ---------- 2026 template signals (sources: Sailop 21 signs, Slopdar, 925 Studios, CodeMySpec, Krebs) ---------- */
+// Hero headline formulas: say "better" without saying what
+export const HEADLINE_FORMULA = [
+  /\b(?:supercharge|transform|elevate|unlock|empower|revolutioni[sz]e|reimagine|accelerate|amplify|turbocharge|10x) your\b/i,
+  /,\s*reimagined\.?$/i, /\bthe future of [\w ]{2,30}(?: is here)?\.?$/i, /\b[\w ]{2,30} made (?:simple|easy|effortless)\.?$/i,
+  /\byour all-in-one\b/i, /\ball-in-one (?:platform|solution|workspace|hub)\b/i, /\b(?:build|ship|grow|scale|work) (?:faster|smarter)\b/i,
+  /\bfor the modern [\w ]{2,25}\b/i, /\bwhere [\w ]{2,25} meets [\w ]{2,25}\b/i, /\bscale without limits\b/i, /\bbuild the future\b/i,
+  /\bthat (?:just )?works\.?$/i, /\beverything you need to\b/i, /\bthe (?:only|last) [\w ]{2,25} you(?:'ll|’ll| will)? ever need\b/i,
+  /\bturn (?:your )?[\w ]{2,25} into\b/i, /\ba smarter way to\b/i, /\bat the speed of\b/i, /\bnext[- ]gen(?:eration)? [\w ]{2,25}\b/i,
+  /\bin (?:just )?(?:a few|one|minutes|seconds)\b.*\.?$/i, /\bai[- ]powered [\w ]{2,25}\b/i,
+  /geleceği(?:ni)?\s*(?:bugün|şimdi|şekillendir)/i, /(?:hiç olmadığı|olmadığı) kadar (?:kolay|hızlı|akıllı)/i, /tek (?:bir )?platformda/i,
+  /yeniden tanımlı?y/i, /bir sonraki seviyeye/i, /yapay zek[âa] destekli/i, /(?:işinizi|ekibinizi|verimliliğinizi) (?:büyütün|güçlendirin|artırın)/i,
+];
+// Canonical microcopy; three or more on a page is a template
+export const STOCK_MICROCOPY = [
+  'get started', 'get started for free', 'start for free', 'try it free', 'try for free', 'start your free trial', 'start free trial',
+  'learn more', 'watch demo', 'watch the demo', 'book a demo', 'request a demo', 'schedule a demo', 'see how it works',
+  'no credit card required', 'cancel anytime', '14-day free trial', 'free forever', 'join thousands', 'trusted by', 'loved by',
+  'ready to get started', 'ready to transform', 'ready to take', 'ready to level up', 'in just a few clicks', 'powered by ai',
+  'ai-powered', 'built for', 'designed for', 'all rights reserved', 'most popular', 'contact sales', 'join the waitlist',
+  'hemen başla', 'ücretsiz dene', 'ücretsiz başla', 'daha fazla bilgi', 'demo talep et', 'kredi kartı gerekmez', 'istediğin zaman iptal',
+  'binlerce kullanıcı', 'tüm hakları saklıdır', 'en popüler', 'yapay zeka destekli', 'birkaç tıkla', 'başlamaya hazır mısınız',
+];
+// Tailwind's default palette written out as hex in hand-made CSS
+export const TW_HEX = new Set(['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f1f5f9', '#f8fafc',
+  '#111827', '#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db', '#e5e7eb', '#f3f4f6', '#f9fafb', '#09090b', '#18181b',
+  '#27272a', '#3f3f46', '#52525b', '#71717a', '#a1a1aa', '#d4d4d8', '#e4e4e7', '#f4f4f5', '#a855f7', '#9333ea', '#7e22ce', '#c084fc',
+  '#8b5cf6', '#7c3aed', '#6d28d9', '#a78bfa', '#6366f1', '#4f46e5', '#4338ca', '#818cf8', '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa',
+  '#ec4899', '#db2777', '#f472b6', '#d946ef', '#c026d3', '#06b6d4', '#0891b2', '#22d3ee', '#10b981', '#059669', '#34d399', '#14b8a6',
+  '#22c55e', '#16a34a', '#f59e0b', '#eab308', '#ef4444', '#dc2626', '#f97316', '#0ea5e9', '#38bdf8']);
+// effects people paste from snippets and libraries, outside React components
+export const GIMMICK_CODE = [
+  ['typing effect', /isDeleting|new Typed\(|typed\.js|typewriter(?:-effect)?|class=["'][^"']*\btyp(?:ing|ed)\b/i],
+  ['custom cursor', /cursor-follower|cursor-dot|cursor-outline|custom-cursor|class=["'][^"']*\bcursor\b["']|\.cursor\s*\{[^}]*position\s*:\s*(?:fixed|absolute)/i],
+  ['particles', /particles\.js|particlesJS|tsparticles|particles-js/i],
+  ['floating shapes', /class=["'][^"']*\b(?:cube|blob|orb|floating-shape|shape-\d)\b[^"']*["'][\s\S]{0,200}class=["'][^"']*\b(?:cube|blob|orb|floating-shape|shape-\d)\b/i],
+  ['tilt cards', /vanilla-tilt|data-tilt\b|tilt\.js/i],
+  ['scramble text', /scramble|glitch-text|class=["'][^"']*\bglitch\b/i],
+  ['matrix rain', /matrix-rain|matrixRain/i],
+];
+export const PORTFOLIO_SECTIONS = /^(?:about(?: me)?|skills|tech stack|experience|work experience|projects|my projects|portfolio|contact(?: me)?|services|education|hakkımda|yetenekler(?:im)?|beceriler(?:im)?|deneyim(?:ler(?:im)?)?|projeler(?:im)?|iletişim|hizmetler(?:im)?|eğitim)$/i;
