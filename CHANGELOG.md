@@ -2,6 +2,7 @@
 
 ## 0.3.2 (2026-10-18)
 
+- Fix: in folder scans a meta description with an apostrophe ("Odunpazarı'ndaki…") was cut at the apostrophe.
 - **What the owner keeps stays.** Words in `keep` ("our purple is the brand", "keep it dark", "the font stays") take the matching findings out of the rescue plan, and the plan tells the AI not to touch them and how to switch them off in `.aislopmeter.json`. The `rescue` prompt and the skill re-plan with `keep` as soon as the owner says something must stay.
 
 ## 0.3.1 (2026-10-18)

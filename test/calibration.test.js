@@ -102,3 +102,15 @@ test('a short contact page is not a thin page', async () => {
   const contact = page('<h1>Bize yaz</h1><p>merhaba@kavruk.coffee</p><h2>Atölyeye gel</h2><button>Gönder</button>').replace('<title>Test page</title>', '<title>İletişim</title>');
   assert.ok(!ids(await scanHtml(contact)).includes('thin-page'));
 });
+
+test('a description with an apostrophe is read whole in folder scans', async () => {
+  const { mkdtemp, writeFile } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { scanTarget } = await import('../src/index.js');
+  const dir = await mkdtemp(join(tmpdir(), 'desc-'));
+  await writeFile(join(dir, 'index.html'), page(prose(4), '<meta name="description" content="Odunpazarı\'ndaki atölyemizde haftada iki gün, küçük partilerle kavuruyoruz.">'));
+  const r = await scanTarget(dir, { config: false, render: 'never' });
+  assert.ok(r.meta.description.length > 40, r.meta.description);
+  assert.equal(r.aeo.checks.find((c) => c.id === 'title-description').ok, true);
+});

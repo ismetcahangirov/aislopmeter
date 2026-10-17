@@ -246,8 +246,9 @@ export async function corpusFromProject(root, { ignore = [], includeUi = false }
   const indexHtml = C.sources.find((s) => /(?:^|\/)index\.html?$/.test(s.file));
   if (indexHtml) {
     const t = indexHtml.content.match(/<title>([^<]*)<\/title>/i);
-    const d = indexHtml.content.match(/<meta\s+name=["']description["']\s+content=["']([^"']*)/i);
-    C.meta = { title: t ? t[1].trim() : null, description: d ? d[1] : null, file: indexHtml.file, titleLine: t ? indexHtml.lineAt(t.index) : 1 };
+    // the closing quote must match the opening one: "Odunpazarı'ndaki" is one description, not "Odunpazarı"
+    const d = indexHtml.content.match(/<meta\s+name=["']description["']\s+content=(["'])([\s\S]*?)\1/i);
+    C.meta = { title: t ? t[1].trim() : null, description: d ? d[2] : null, file: indexHtml.file, titleLine: t ? indexHtml.lineAt(t.index) : 1 };
   }
   return C;
 }
