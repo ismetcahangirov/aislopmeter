@@ -20,7 +20,9 @@ export { fixPrompt, actionsFor } from './actions.js';
 
 async function analyzeCorpus(C, opts) {
   const { findings, words, lang } = await runRules(C, opts);
-  return finalize({ findings: attachActions(findings), words, lang, pageType: guessPageType(C.text) });
+  const ids = new Set(findings.map((f) => f.id));
+  const pageType = ids.has('portfolio-template') || ids.has('no-work-shown') ? 'portfolio' : guessPageType(C.text);
+  return finalize({ findings: attachActions(findings), words, lang, pageType });
 }
 
 export async function scanHtml(html, { url = '', file = null, now, assets = [], shell = false } = {}) {
@@ -31,6 +33,15 @@ export async function scanHtml(html, { url = '', file = null, now, assets = [], 
   if (r.words < 40 && C.shellRoot) notes.push({ code: 'shell' });
   else if (r.words < 120) notes.push({ code: 'low-text' });
   return { kind: 'page', target: url || '(html)', url, ...r, notes, meta: C.meta };
+}
+
+/** How a page is named in locations: "index.html:66", "about:12". */
+export function pageFileName(url) {
+  try {
+    const u = new URL(url);
+    const p = decodeURIComponent(u.pathname).replace(/^\/+/, '');
+    return (!p || p.endsWith('/') ? p + 'index.html' : p) + (u.search || '');
+  } catch { return 'index.html'; }
 }
 
 export const DEFAULT_PAGES = 30;
@@ -44,13 +55,14 @@ export async function scanUrl(input, { pages = DEFAULT_PAGES, render = 'auto', n
   const n = pages === 'all' ? MAX_PAGES : Math.max(1, Math.min(MAX_PAGES, pages | 0 || DEFAULT_PAGES));
   if (n === 1) {
     const first = await loadPage(input, { render });
-    const main = await scanHtml(first.html, { url: first.url, now, assets: first.assets, shell: first.shell });
+    // a page that was not rendered can be traced back to lines of the HTML the server sent
+    const main = await scanHtml(first.html, { url: first.url, now, assets: first.assets, shell: first.shell, file: first.rendered ? null : pageFileName(first.url) });
     main.rendered = first.rendered;
     main.notes.push(...first.notes);
     return remember({ ...main, target: first.url });
   }
   const crawl = await crawlSite(input, {
-    max: n, render, budgetMs, concurrency, onPage,
+    max: n, render, budgetMs, concurrency, onPage, fileName: pageFileName,
     scan: (html, url, extra = {}) => scanHtml(html, { url, now, ...extra }),
   });
   const ok = crawl.pages.filter((r) => !r.error);

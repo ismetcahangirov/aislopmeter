@@ -46,7 +46,7 @@ function resolveVars(str, vars, depth = 0) {
 function stripMentions(text) {
   return text.replace(/(["“«‘])([^"“”«»‘’\n]{1,80})(["”»’])/g, (m, a, inner, b) => (inner.trim().split(/\s+/).length <= 8 ? ' ' : m));
 }
-const locOf = (item, snippet) => (item && item.loc ? { file: item.loc.file, line: item.loc.line, snippet: clip(snippet ?? item.text ?? '', 90) } : null);
+const locOf = (item, snippet) => (item && item.loc ? { file: item.loc.file, line: item.loc.line, snippet: clip(snippet ?? item.text ?? '', 220) } : null);
 const locs = (arr) => {
   const seen = new Set();
   const out = [];
@@ -312,7 +312,7 @@ const language = [
         `Slop sözlüğünden ${nS} güçlü ve ${nW} zayıf eşleşme, 1000 kelimede ${round1(rate)} (insan yazısı web metninde ortalama 7'nin epey altı).`),
       evidence: [hitList(all, 12).join(' · '), ...examples(ctx, Object.keys(all))],
       locations: locs(where.map((w) => locOf(w.item))),
-      fix: t('Delete each phrase or replace it with what the product concretely does. Do not swap one buzzword for a synonym.', 'Her ifadeyi silin ya da ürünün somut olarak yaptığı işle değiştirin. Bir klişeyi eş anlamlısıyla değiştirmeyin.'),
+      fix: t('Delete each phrase or replace it with the concrete thing behind it. Do not swap one buzzword for a synonym.', 'Her ifadeyi silin ya da arkasındaki somut bilgiyle değiştirin. Bir klişeyi eş anlamlısıyla değiştirmeyin.'),
     };
   },
 
@@ -618,7 +618,7 @@ const design = [
       id: 'gradient-text', cat: 'design', pts: 2, effort: 'redesign',
       title: t('Gradient headline text', 'Gradyanlı başlık yazısı'),
       detail: t('Headline letters filled with a gradient.', 'Başlık harfleri gradyanla boyanmış.'),
-      evidence: ['bg-clip-text text-transparent'],
+      evidence: [hit.length ? 'bg-clip-text text-transparent' : 'background-clip: text'],
       locations: locs([...hit, ...cssHit].map((c) => locOf(c, c.value || 'background-clip: text'))),
       fix: t('Let a characterful typeface in one solid colour carry the headline.', 'Başlığı karakterli bir yazı tipi ve tek düz renk taşısın.'),
     };
@@ -700,7 +700,7 @@ const design = [
         id: 'perma-dark', cat: 'design', pts: 2.5, effort: 'redesign',
         title: t('Dark by default, for no reason', 'Sebepsiz yere varsayılan karanlık'),
         detail: t('The page opens near-black whatever the visitor\'s setting. One of the most common looks on AI-built sites; a theme toggle does not change the first impression.', 'Sayfa ziyaretçinin ayarından bağımsız olarak siyaha yakın açılıyor. AI ile yapılmış sitelerin en yaygın görünümlerinden; tema düğmesi ilk izlenimi değiştirmiyor.'),
-        evidence: [clip(`background: ${bodyBg.trim()}`, 60)],
+        evidence: [clip(`background: ${bodyBg.trim()}${bodyBg.includes('var(') ? ` = ${resolveVars(bodyBg, ctx.vars).trim()}` : ''}`, 80)],
         fix: t('Follow prefers-color-scheme, or choose dark only if the subject calls for it (night, film, code). If it stays dark, use 3-4 surface levels and body text at 7:1 contrast.', 'prefers-color-scheme ayarını izleyin ya da koyu temayı yalnızca konu gerektiriyorsa seçin (gece, film, kod). Koyu kalacaksa 3-4 yüzey seviyesi ve 7:1 kontrastlı gövde metni kullanın.'),
       };
     }
@@ -1124,8 +1124,8 @@ const finish = [
       id: 'raw-markdown', cat: 'finish', pts: 3, effort: 'quick',
       title: t('Raw markdown on the page', 'Sayfada ham markdown'),
       detail: t('Formatting marks from text pasted out of a chat show up literally.', 'Sohbetten kopyalanan metnin biçim işaretleri olduğu gibi görünüyor.'),
-      evidence: hits.slice(0, 3).map((c) => clip(c.text, 60)),
-      locations: locs(hits.map((c) => locOf(c))),
+      evidence: hits.slice(0, 3).map((c) => (c.text.match(/\*\*[^*\n]{2,60}\*\*|^#{2,4} \S[^\n]{0,40}|```/) || [c.text])[0]),
+      locations: locs(hits.map((c) => { const m = c.text.match(/\*\*[^*\n]{2,60}\*\*|^#{2,4} \S|```/); const i = m ? Math.max(0, m.index - 60) : 0; return locOf(c, (i ? '…' : '') + c.text.slice(i, i + 160)); })),
       fix: t('Remove the marks or convert them to real HTML.', 'İşaretleri silin ya da gerçek HTML\'e çevirin.'),
     };
   },

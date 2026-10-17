@@ -72,8 +72,8 @@ const A = {
   /* ---------- language ---------- */
   lexicon: {
     steps: [
-      t('Open each listed location and find the cliché word (seamless, elevate, unlock, robust, delve…).', 'Listelenen her konumu açıp klişe kelimeyi bulun (sorunsuz, kusursuz, bir üst seviyeye taşıyın, keşfedin…).'),
-      t('Rewrite the sentence around what the product does, in plain words. Do not swap in a synonym.', 'Cümleyi ürünün ne yaptığı üzerinden, sade kelimelerle yeniden yazın. Eş anlamlısıyla değiştirmeyin.'),
+      t('Open each listed place and find the cliché phrase listed for this site.', 'Listelenen her yeri açıp bu site için listelenen klişe ifadeyi bulun.'),
+      t('Rewrite the sentence around what was actually done or what it does, in plain words: what, for whom, with what result. Do not swap in a synonym.', 'Cümleyi gerçekte ne yapıldığı ya da ne işe yaradığı üzerinden sade kelimelerle yeniden yazın: ne, kimin için, hangi sonuçla. Eş anlamlısıyla değiştirmeyin.'),
       t('If the sentence says nothing once the word is gone, delete the whole sentence.', 'Kelime çıkınca cümle bir şey söylemiyorsa cümlenin tamamını silin.'),
     ],
     done: t('Read the page aloud: nothing sounds like an ad you have heard before.', 'Sayfayı sesli okuyun: hiçbir cümle daha önce duyduğunuz bir reklam gibi gelmiyor.'),
@@ -235,7 +235,7 @@ const A = {
     done: t('Content is there when you scroll, without waiting.', 'Kaydırınca içerik beklemeden orada.'),
   },
   'gimmick-effects': {
-    steps: [t('Remove the gimmick components listed under evidence (marquees, spotlight cards, beams, meteors, typewriters).', 'Kanıttaki gösteriş bileşenlerini kaldırın (kayan yazılar, spot ışıklı kartlar, ışınlar, meteorlar, daktilo efekti).'), t('Spend that space on a real example of your work.', 'O alanı işinizden gerçek bir örneğe ayırın.')],
+    steps: [t('Remove the effects listed for this site.', 'Bu sitede listelenen efektleri kaldırın.'), t('Spend that space on a real example of your work.', 'O alanı işinizden gerçek bir örneğe ayırın.')],
     done: t('Nothing moves just to look busy.', 'Hiçbir şey sadece meşgul görünmek için hareket etmiyor.'),
   },
   'default-theme': {
@@ -432,6 +432,51 @@ export function attachActions(findings) {
 
 const pick = (o, lang) => (o == null ? '' : typeof o === 'string' ? o : o[lang] || o.en || '');
 
+/**
+ * What exactly to change on THIS site: the evidence the check found and the places it found it.
+ * Returns { found: 'a · b · c' | '', places: [{ where, text }] }.
+ */
+// evidence labels produced in English by the checks
+const EVIDENCE_TR = {
+  'typing effect': 'daktilo efekti', 'custom cursor': 'özel imleç', 'floating shapes': 'uçuşan şekiller', particles: 'parçacıklar',
+  'tilt cards': 'eğilen kartlar', 'scramble text': 'karışan yazı', 'matrix rain': 'matrix yağmuru',
+  '"Hi, I\'m" greeting': '"Merhaba, ben" selamlaması', 'rotating job titles': 'yazılıp silinen unvanlar', 'standard section menu': 'standart bölüm menüsü',
+  '"X+ years" stat cards': '"X+ yıl" kartları', 'skill category cards': 'yetenek kutuları', 'glowing timeline': 'parlayan zaman çizelgesi',
+  '0 project images, 0 project links': '0 proje görseli, 0 proje linki', 'hero with two buttons': 'iki butonlu hero', 'logo strip': 'logo şeridi',
+  'feature grid': 'özellik kartları', 'how it works': '"nasıl çalışır" bölümü', testimonials: 'yorumlar', 'stats row': 'istatistik satırı',
+  'three pricing plans': '3\'lü fiyat planı', 'FAQ accordion': 'SSS akordeonu', 'closing call to action': 'kapanış çağrısı', 'four-column footer': '4 sütunlu footer',
+  'meta description': 'meta açıklama', 'Open Graph': 'paylaşım önizlemesi (Open Graph)',
+};
+export const evidenceText = (e, lang) => (lang === 'tr' && EVIDENCE_TR[e]) || e;
+
+export function targetsOf(f, { max = 6, lang = 'en' } = {}) {
+  const ev = (f.evidence || []).filter(Boolean).map((e) => evidenceText(String(e).replace(/\s+/g, ' ').trim(), lang));
+  const places = [];
+  const seen = new Set();
+  for (const l of (f.locations || []).filter(Boolean)) {
+    const k = `${l.file}:${l.line}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    places.push({ where: k, text: l.snippet ? String(l.snippet).replace(/\s+/g, ' ').trim() : '' });
+    if (places.length >= max) break;
+  }
+  // evidence that is not already visible in a snippet
+  const shown = places.map((p) => p.text).join(' ');
+  const extra = ev.filter((e) => e.length > 1 && !shown.includes(e.slice(0, 30))).slice(0, 4);
+  return { found: extra.map((e) => (e.length > 140 ? e.slice(0, 137) + '…' : e)).join(' / '), places };
+}
+
+/** The same as lines of text, for prompts. */
+export function targetLines(f, lang = 'en', indent = '') {
+  const tr = lang === 'tr';
+  const { found, places } = targetsOf(f, { lang });
+  const out = [];
+  if (found) out.push(`${indent}${tr ? 'Bu sitede' : 'On this site'}: ${found}`);
+  for (const p of places) out.push(`${indent}${p.where}${p.text ? `  «${p.text}»` : ''}`);
+  if (f.pages?.length > 1) out.push(`${indent}${tr ? 'Sayfalar' : 'Pages'}: ${f.pages.slice(0, 8).join(', ')}${f.pages.length > 8 ? ` +${f.pages.length - 8}` : ''}`);
+  return out;
+}
+
 /** A focused prompt for one finding: paste it into any AI that can edit the site. */
 export function fixPrompt(f, scan, lang = 'en') {
   const tr = lang === 'tr';
@@ -440,8 +485,8 @@ export function fixPrompt(f, scan, lang = 'en') {
   out.push('');
   out.push(`${tr ? 'Sorun' : 'Problem'}: ${pick(f.title, lang)}`);
   if (f.detail) out.push(pick(f.detail, lang));
-  const ev = (f.evidence || []).filter(Boolean).slice(0, 5);
-  if (ev.length) { out.push(''); out.push(tr ? 'Kanıt:' : 'Evidence:'); for (const e of ev) out.push(`- ${String(e).replace(/\s+/g, ' ')}`); }
+  const tl = targetLines(f, lang, '- ');
+  if (tl.length) { out.push(''); out.push(tr ? 'Bu sitede değişecek yerler:' : 'What to change on this site:'); out.push(...tl); }
   if (f.pages?.length && scan.kind === 'site') {
     const base = scan.url || scan.target;
     const abs = (p) => { try { return new URL(p, base).toString(); } catch { return p; } };
@@ -452,7 +497,7 @@ export function fixPrompt(f, scan, lang = 'en') {
     out.push(''); out.push(`${tr ? 'Sayfa' : 'Page'}: ${(() => { try { return new URL(f.page, scan.url || scan.target).toString(); } catch { return f.page; } })()}`);
   }
   const ls = (f.locations || []).filter(Boolean);
-  if (ls.length) { out.push(''); out.push(tr ? 'Konumlar:' : 'Locations:'); for (const l of ls) out.push(`- ${l.file}:${l.line}${l.snippet ? `  ${l.snippet}` : ''}`); }
+  if (ls.length > 6) { out.push(`- … +${ls.length - 6}`); }
   out.push('');
   out.push(tr ? 'Yapılacaklar:' : 'Steps:');
   (f.steps || []).forEach((s, i) => out.push(`${i + 1}. ${pick(s, lang)}`));

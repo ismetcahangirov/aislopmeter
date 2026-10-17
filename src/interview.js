@@ -1,4 +1,6 @@
 // Questions that get real, specific facts out of the site owner, so the rewrite has substance.
+import { evidenceText } from './actions.js';
+
 const t = (en, tr) => ({ en, tr });
 
 export const PAGE_TYPES = {
@@ -16,7 +18,7 @@ export function guessPageType(text) {
     shop: (s.match(/add to cart|sepete ekle|sepet|checkout|ücretsiz kargo|free shipping|kargo|stokta|in stock|iade|returns/g) || []).length,
     local: (s.match(/opening hours|çalışma saatleri|rezervasyon|reservation|randevu|appointment|menü|menu|adres|address|directions|yol tarifi|cad\.|sok\.|mah\./g) || []).length,
     saas: (s.match(/pricing|fiyatlandırma|free trial|ücretsiz dene|dashboard|integration|entegrasyon|api|workflow|iş akışı|sign up|kayıt ol|per month|\/ay|\/mo|plan/g) || []).length,
-    portfolio: (s.match(/portfolio|portfolyo|case stud|projelerim|my work|çalışmalarım|hire me|freelance|serbest|selected work/g) || []).length,
+    portfolio: (s.match(/portfolio|portfolyo|case stud|projelerim|my work|çalışmalarım|hire me|freelance|serbest|selected work|software engineer|full stack|developer|yazılım mühendisi|hakkımda|about me|yetenekler|özgeçmiş|resume/g) || []).length,
     blog: (s.match(/min read|dk okuma|okuma süresi|read more|devamını oku|posted|yayınlandı|author|yazar|blog/g) || []).length,
   };
   const [best, n] = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
@@ -30,6 +32,13 @@ export const INTERVIEW = {
     t('Give three concrete facts with numbers you can stand behind (time saved, price, years, volume, response time) and where each number comes from.', 'Arkasında durabileceğiniz rakamlı üç somut bilgi verin (kazanılan süre, fiyat, yıl, hacim, cevap süresi) ve her rakamın nereden geldiğini.'),
     t('Who is behind it? Names and roles we can show, and how a visitor can reach a person.', 'Arkasında kim var? Gösterebileceğimiz isimler ve roller, ziyaretçinin bir insana nasıl ulaşabileceği.'),
     t('What should stay exactly as it is (logo, colours, tone, sections)?', 'Olduğu gibi kalması gereken ne var (logo, renkler, ton, bölümler)?'),
+  ],
+  // a person's site is not a business: ask about the person and the work
+  corePortfolio: [
+    t('In one sentence: who are you, what do you do, and who should contact you for what?', 'Tek cümleyle: kimsin, ne yapıyorsun ve kim seninle ne için iletişime geçmeli?'),
+    t('Which 2-3 projects should lead the page? For each: a link, a screenshot, what you did, the stack and the result.', 'Sayfanın başında hangi 2-3 proje olsun? Her biri için: link, ekran görüntüsü, ne yaptığın, kullandığın teknoloji ve sonuç.'),
+    t('Three facts with numbers you can stand behind (years, users, a measured result, a ranking) and where each comes from.', 'Arkasında durabileceğin rakamlı üç bilgi (yıl, kullanıcı sayısı, ölçülmüş bir sonuç, bir derece) ve her birinin kaynağı.'),
+    t('What should stay exactly as it is (name, photo, colours, sections)?', 'Olduğu gibi kalması gereken ne var (isim, fotoğraf, renkler, bölümler)?'),
   ],
   saas: [
     t('Walk me through the first 10 minutes of a new user: what do they click, what do they see?', 'Yeni bir kullanıcının ilk 10 dakikasını anlatın: neye tıklıyor, ne görüyor?'),
@@ -51,9 +60,7 @@ export const INTERVIEW = {
     t('Real reviews you can quote with the buyer\'s first name and city?', 'Alıcının adı ve şehriyle alıntılayabileceğiniz gerçek yorumlar var mı?'),
   ],
   portfolio: [
-    t('Three projects: client, problem, what you did, result, year.', 'Üç proje: müşteri, sorun, ne yaptınız, sonuç, yıl.'),
-    t('Your tools and the kind of work you turn down.', 'Kullandığınız araçlar ve geri çevirdiğiniz iş türü.'),
-    t('Availability, rates or a starting price, and how to book.', 'Müsaitlik, ücret ya da başlangıç fiyatı ve nasıl iş verilir.'),
+    t('Are you open to work or freelance projects? If so, what kind, and how should people reach you?', 'İş ya da serbest proje arıyor musun? Arıyorsan ne tür ve sana nasıl ulaşılmalı?'),
   ],
   blog: [
     t('Who writes here and why should a reader trust them on this topic?', 'Burada kim yazıyor ve okuyucu bu konuda ona neden güvenmeli?'),
@@ -67,12 +74,25 @@ export const INTERVIEW = {
     placeholder: (f) => t(`These placeholders need real content: ${f.evidence.join(', ')}. What should replace each, or should the block go?`, `Bu yer tutucuların gerçek içeriğe ihtiyacı var: ${f.evidence.join(', ')}. Her birinin yerine ne gelsin, yoksa blok kaldırılsın mı?`),
     'dead-links': (f) => t(`Where should these go: ${f.evidence.join(', ')}?`, `Bunlar nereye gitmeli: ${f.evidence.join(', ')}?`),
     inflation: () => t('For each "crucial / game-changing" claim: what happened, for whom, when?', 'Her "kritik / çığır açan" iddiası için: ne oldu, kimin için, ne zaman?'),
+    // the sentences this site actually uses
+    lexicon: (f) => {
+      const ss = (f.locations || []).map((l) => l.snippet).filter(Boolean).slice(0, 4);
+      if (!ss.length) return null;
+      const list = ss.map((x) => `«${x}»`).join(' ');
+      return t(`What is the plain fact behind each of these? ${list}`, `Bu cümlelerin her birinin arkasındaki düz bilgi ne? ${list}`);
+    },
+    'headline-formula': (f) => t(`The headline says ${(f.evidence || []).slice(0, 2).map((x) => `«${x}»`).join(' and ')}. In your own words: what does it do, for whom?`, `Başlık şu an ${(f.evidence || []).slice(0, 2).map((x) => `«${x}»`).join(' ve ')} diyor. Kendi kelimelerinle: ne yapıyor, kimin için?`),
+    'gimmick-effects': (f) => t(`These effects will be removed: ${(f.evidence || []).join(', ')}. Should any of them stay?`, `Şu efektler kaldırılacak: ${(f.evidence || []).map((e) => evidenceText(e, 'tr')).join(', ')}. Kalmasını istediğin var mı?`),
+    'perma-dark': () => t('Is the dark theme a deliberate choice, or should the page open light and follow the visitor\'s setting?', 'Koyu tema bilinçli bir tercih mi, yoksa sayfa açık açılıp ziyaretçinin ayarını mı izlesin?'),
+    'purple-gradient': () => t('Is there a colour that is really yours (logo, channel art, product)? The new palette will start from it.', 'Gerçekten sana ait bir renk var mı (logo, kanal görseli, ürün)? Yeni palet ondan başlayacak.'),
+    'default-palette': () => t('Is there a colour that is really yours (logo, channel art, product)? The new palette will start from it.', 'Gerçekten sana ait bir renk var mı (logo, kanal görseli, ürün)? Yeni palet ondan başlayacak.'),
   },
   trustItems: [
-    { id: 'person', text: t('Add the people behind it: names, roles, a photo, a short line on their experience.', 'Arkasındaki insanları ekleyin: isim, rol, fotoğraf, deneyimlerine dair kısa bir satır.') },
+    { id: 'person', text: t('Add the people behind it: names, roles, a photo, a short line on their experience.', 'Arkasındaki insanları ekleyin: isim, rol, fotoğraf, deneyimlerine dair kısa bir satır.'), types: ['saas', 'local', 'shop', 'blog', 'general'] },
+    { id: 'person', text: t('Add a real photo of you and two lines on where you work and what you are working on now.', 'Gerçek bir fotoğrafını ve nerede çalıştığını, şu an ne üzerinde çalıştığını anlatan iki satır ekle.'), types: ['portfolio'] },
     { id: 'email', text: t('Add a direct contact: a real email or a contact page that reaches a person.', 'Doğrudan iletişim ekleyin: gerçek bir e-posta ya da bir insana ulaşan iletişim sayfası.') },
     { id: 'address', text: t('Show the address or the city you operate from.', 'Adresi ya da faaliyet gösterdiğiniz şehri gösterin.'), types: ['local', 'shop', 'general'] },
-    { id: 'price', text: t('Publish prices or a clear starting price.', 'Fiyatları ya da net bir başlangıç fiyatını yayınlayın.'), types: ['saas', 'local', 'shop', 'portfolio'] },
+    { id: 'price', text: t('Publish prices or a clear starting price.', 'Fiyatları ya da net bir başlangıç fiyatını yayınlayın.'), types: ['saas', 'local', 'shop'] },
     { id: 'legal', text: t('Add the legal entity in the footer (company name, registration or tax number where customary).', 'Altbilgiye yasal unvanı ekleyin (şirket adı, gerekiyorsa sicil ya da vergi no).'), types: ['saas', 'shop'] },
     { id: 'dated', text: t('Date your content and show when it was last updated.', 'İçeriğe tarih koyun ve son güncellemeyi gösterin.'), types: ['blog', 'saas'] },
   ],

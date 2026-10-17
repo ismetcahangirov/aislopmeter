@@ -117,7 +117,7 @@ const sectionOf = (u) => (new URL(u).pathname.split('/').filter(Boolean)[0] || '
  * Crawl a site and scan each page with `scan(html, url)`.
  * Returns { pages: [{ url, path, html? , error? , rendered }], notes, stopped }.
  */
-export async function crawlSite(input, { max = 30, render = 'auto', concurrency = 4, budgetMs = 120000, scan, onPage } = {}) {
+export async function crawlSite(input, { max = 30, render = 'auto', concurrency = 4, budgetMs = 120000, scan, onPage, fileName = () => null } = {}) {
   const t0 = Date.now();
   const startUrl = normalizeUrl(input);
   const notes = [];
@@ -148,7 +148,7 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
     pool.set(key, { url: u.toString(), depth, from });
   };
 
-  results.push(await scanOne(first.url, first.html, first.rendered, first.notes, { assets: first.assets, shell: first.shell }));
+  results.push(await scanOne(first.url, first.html, first.rendered, first.notes, { assets: first.assets, shell: first.shell, file: first.rendered ? null : fileName(first.url) }));
   onPage?.(results[0], 1, max);
 
   if (max > 1) {
@@ -209,7 +209,7 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
           if (rr.html) { html = rr.html; rendered = true; }
         }
         const assets = await fetchAssets(html, got.finalUrl, assetCache);
-        const page = await scanOne(got.finalUrl, html, rendered, [], { assets, shell });
+        const page = await scanOne(got.finalUrl, html, rendered, [], { assets, shell, file: rendered ? null : fileName(got.finalUrl) });
         results.push(page);
         for (const l of linksOf(html, got.finalUrl)) add(l, c.depth + 1, 'link');
         onPage?.(page, results.length, max);

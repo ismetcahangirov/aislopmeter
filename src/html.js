@@ -9,7 +9,7 @@ import { ORDER } from './score.js';
 import { labels } from './report.js';
 import { buildRescuePlan } from './rescue.js';
 import { VERSION } from './version.js';
-import { fixPrompt } from './actions.js';
+import { fixPrompt, targetLines, targetsOf } from './actions.js';
 
 const js = (v) => JSON.stringify(v).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -162,8 +162,8 @@ function promptText(plan, scan, lang) {
     out.push(`${i + 1}. ${pick(ph.title, lang)}`);
     for (const q of ph.questions || []) out.push(`   - ${tr ? 'Sor' : 'Ask'}: ${pick(q, lang)}`);
     for (const f of ph.steps || []) {
-      const where = (f.locations || []).slice(0, 5).map((l) => `${l.file}:${l.line}`).join(', ');
-      out.push(`   - ${pick(f.title, lang)}${where ? ` (${where})` : ''}: ${pick(f.fix, lang)}`);
+        out.push(`   - ${pick(f.title, lang)}: ${pick(f.fix, lang)}`);
+      out.push(...targetLines(f, lang, '       '));
       for (const st of f.steps || []) out.push(`     · ${pick(st, lang)}`);
     }
     for (const x of ph.extra || []) out.push(`   - ${pick(x, lang)}`);

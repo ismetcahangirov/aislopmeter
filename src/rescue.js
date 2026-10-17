@@ -59,27 +59,25 @@ const RULES = [
 const DESIGN_STEPS = [
   t('Name the subject\'s own world in one line: its materials, place, era, tools, the vocabulary customers use. Every visual choice should come from that line.',
     'Konunun kendi dünyasını tek satırda adlandırın: malzemeleri, mekânı, dönemi, aletleri, müşterilerin kullandığı kelimeler. Her görsel karar bu satırdan çıkmalı.'),
-  t('Palette: 1 background neutral tinted toward the accent, 1 ink colour, 1 accent taken from the subject (a material, a product, a signage colour), used on under 10% of the surface. Check contrast (4.5:1 for text).',
-    'Palet: vurguya doğru hafif renklendirilmiş 1 zemin nötrü, 1 mürekkep rengi, konudan alınmış 1 vurgu (bir malzeme, ürün ya da tabela rengi), yüzeyin %10\'undan azında. Kontrastı kontrol edin (metin için 4.5:1).'),
-  t('Type: pair a display face with character and a quiet text face; avoid Inter/Space Grotesk/Poppins as the whole identity. Set one type scale and stick to it.',
-    'Yazı: karakterli bir başlık fontuyla sakin bir metin fontunu eşleştirin; kimliği tek başına Inter/Space Grotesk/Poppins\'e bırakmayın. Tek bir yazı ölçeği belirleyip ona uyun.'),
-  t('Layout: give each section the shape of its content (table for comparisons, numbered steps only for real sequences, one large proof instead of six small cards). Not everything centred; not everything in a rounded card.',
-    'Düzen: her bölüme içeriğinin şeklini verin (karşılaştırma için tablo, yalnızca gerçek sıralar için numaralı adımlar, altı küçük kart yerine tek büyük kanıt). Her şey ortada değil, her şey yuvarlak kartta değil.'),
-  t('Imagery and icons: real photos of the product, place or people beat illustrations; if icons stay, one consistent set, no emoji.',
-    'Görsel ve ikon: ürünün, mekânın ya da insanların gerçek fotoğrafları illüstrasyondan iyidir; ikon kalacaksa tek ve tutarlı bir set, emoji yok.'),
-  t('Effects: remove glows, blur blobs, glass cards and pulsing badges. Allow one deliberate motion moment at most.',
-    'Efektler: parlamaları, bulanık lekeleri, cam kartları ve yanıp sönen rozetleri kaldırın. En fazla bir bilinçli hareket anı bırakın.'),
+  Object.assign(t('Palette: 1 background neutral tinted toward the accent, 1 ink colour, 1 accent taken from the subject (a material, a product, a signage colour), used on under 10% of the surface. Check contrast (4.5:1 for text).',
+    'Palet: vurguya doğru hafif renklendirilmiş 1 zemin nötrü, 1 mürekkep rengi, konudan alınmış 1 vurgu (bir malzeme, ürün ya da tabela rengi), yüzeyin %10\'undan azında. Kontrastı kontrol edin (metin için 4.5:1).'), { when: ['purple-gradient', 'default-palette', 'cream-terracotta', 'acid-on-black', 'perma-dark', 'gradient-text'] }),
+  Object.assign(t('Type: pair a display face with character and a quiet text face; avoid Inter/Space Grotesk/Poppins as the whole identity. Set one type scale and stick to it.',
+    'Yazı: karakterli bir başlık fontuyla sakin bir metin fontunu eşleştirin; kimliği tek başına Inter/Space Grotesk/Poppins\'e bırakmayın. Tek bir yazı ölçeği belirleyip ona uyun.'), { when: ['default-font'] }),
+  Object.assign(t('Layout: give each section the shape of its content (table for comparisons, numbered steps only for real sequences, one large proof instead of six small cards). Not everything centred; not everything in a rounded card.',
+    'Düzen: her bölüme içeriğinin şeklini verin (karşılaştırma için tablo, yalnızca gerçek sıralar için numaralı adımlar, altı küçük kart yerine tek büyük kanıt). Her şey ortada değil, her şey yuvarlak kartta değil.'), { when: ['card-template', 'landing-template', 'portfolio-template', 'icon-tiles'] }),
+  Object.assign(t('Imagery and icons: real photos of the product, place or people beat illustrations; if icons stay, one consistent set, no emoji.',
+    'Görsel ve ikon: ürünün, mekânın ya da insanların gerçek fotoğrafları illüstrasyondan iyidir; ikon kalacaksa tek ve tutarlı bir set, emoji yok.'), { when: ['emoji-icons', 'stock-icons', 'icon-tiles', 'ai-images', 'placeholder-images', 'emoji-headings'] }),
 ];
 
 const COPY_STEPS = [
-  t('Hero: say who it is for, what it does and one proof, in the visitor\'s words. No "unlock", "elevate", "next level".',
-    'Hero: kimin için olduğunu, ne yaptığını ve tek bir kanıtı ziyaretçinin kelimeleriyle söyleyin. "Potansiyelinizi", "bir sonraki seviye" yok.'),
-  t('Each claim gets a fact: a number with its source, a named customer, a price, a time, a step of the process.',
-    'Her iddiaya bir bilgi: kaynağıyla bir rakam, isimli bir müşteri, bir fiyat, bir süre, sürecin bir adımı.'),
-  t('Cut sentences that could appear on a competitor\'s site unchanged. If nothing remains in a section, cut the section.',
-    'Bir rakibin sitesinde aynen durabilecek cümleleri silin. Bir bölümde hiçbir şey kalmıyorsa bölümü silin.'),
-  t('Buttons name the outcome ("See this week\'s menu", "Book a 20-minute call").',
-    'Butonlar sonucu adlandırsın ("Bu haftanın menüsünü gör", "20 dakikalık görüşme ayarla").'),
+  Object.assign(t('Hero: say who it is for, what it does and one proof, in the visitor\'s words. No "unlock", "elevate", "next level".',
+    'Hero: kimin için olduğunu, ne yaptığını ve tek bir kanıtı ziyaretçinin kelimeleriyle söyleyin. "Potansiyelinizi", "bir sonraki seviye" yok.'), { when: ['headline-formula', 'specificity', 'lexicon', 'inflation'] }),
+  Object.assign(t('Each claim gets a fact: a number with its source, a named customer, a price, a time, a step of the process.',
+    'Her iddiaya bir bilgi: kaynağıyla bir rakam, isimli bir müşteri, bir fiyat, bir süre, sürecin bir adımı.'), { when: ['vanity', 'unverified-claims', 'specificity', 'inflation', 'fake-proof'] }),
+  Object.assign(t('Cut sentences that could appear on someone else\'s site unchanged. If nothing remains in a section, cut the section.',
+    'Başka birinin sitesinde aynen durabilecek cümleleri silin. Bir bölümde hiçbir şey kalmıyorsa bölümü silin.'), { when: ['lexicon', 'specificity', 'stock-microcopy', 'triads', 'neg-parallel'] }),
+  Object.assign(t('Buttons name the outcome ("See this week\'s menu", "Book a 20-minute call").',
+    'Butonlar sonucu adlandırsın ("Bu haftanın menüsünü gör", "20 dakikalık görüşme ayarla").'), { when: ['generic-cta', 'stock-microcopy'] }),
 ];
 
 function simulate(r, removeIds) {
@@ -104,11 +102,14 @@ export function buildRescuePlan(r, { keep = '', targetScore = 20 } = {}) {
 
   // facts
   const factFindings = issues.filter((f) => f.needsFacts);
+  const byFinding = issues.filter((f) => f.needsFacts || INTERVIEW.byFinding[f.id])
+    .flatMap((f) => { const q = INTERVIEW.byFinding[f.id] && INTERVIEW.byFinding[f.id](f); return q ? [q] : []; });
+  const seenQ = new Set();
   const questions = [
-    ...INTERVIEW.core,
+    ...(type === 'portfolio' ? INTERVIEW.corePortfolio : INTERVIEW.core),
     ...(INTERVIEW[type] || []),
-    ...factFindings.flatMap((f) => (INTERVIEW.byFinding[f.id] ? [INTERVIEW.byFinding[f.id](f)] : [])),
-  ];
+    ...byFinding,
+  ].filter((q) => { const k = q.en; if (seenQ.has(k)) return false; seenQ.add(k); return true; });
   phases.push({ ...PHASES[0], questions, steps: [], gain: 0, scoreAfter: score });
 
   for (const ph of PHASES.slice(1, 4)) {
@@ -117,7 +118,9 @@ export function buildRescuePlan(r, { keep = '', targetScore = 20 } = {}) {
     if (!steps.length) continue;
     removed = new Set([...removed, ...steps.map(key)]);
     const after = simulate(r, removed);
-    const extra = ph.key === 'design' ? DESIGN_STEPS : ph.key === 'copy' ? COPY_STEPS : [];
+    // general guidance only where this site has a matching problem
+    const has = (ids) => issues.some((f) => ids.includes(f.id));
+    const extra = (ph.key === 'design' ? DESIGN_STEPS : ph.key === 'copy' ? COPY_STEPS : []).filter((x) => !x.when || has(x.when));
     const next = Math.min(score, after); // an estimate never shows a phase making things worse
     phases.push({ ...ph, steps, extra, gain: score - next, scoreAfter: next });
     score = next;
