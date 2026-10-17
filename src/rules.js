@@ -77,9 +77,11 @@ function copyWith(ctx, phrases) {
 }
 
 /** Regex over raw sources, with file:line when scanning a project. */
-function findAll(ctx, re, max = 50) {
+function findAll(ctx, re, max = 50, { copyOnly = false } = {}) {
   const out = [];
   for (const s of ctx.sources) {
+    // a site's linked bundles hold library code, i18n templates and licence headers, not the page's copy
+    if (copyOnly && s.asset) continue;
     for (const m of s.content.matchAll(re)) {
       out.push({ match: m[0], m, loc: s.file ? { file: s.file, line: s.lineAt(m.index) } : null });
       if (out.length >= max) return out;
@@ -104,6 +106,9 @@ const content = [
     const prose = ctx.proseLines.join('\n');
     const pw = Math.max(1, wordsOf(prose).length);
     if (pw < 80) return null;
+    // an archive of dated posts or news is concrete by nature, even when each teaser is short
+    const dates = (lowTR(ctx.text).match(new RegExp(`(?:${LX.MONTHS.join('|')})[^\\n]{0,4}(?:19|20)\\d{2}|(?:19|20)\\d{2}-\\d{2}-\\d{2}|\\d{1,2}[./]\\d{1,2}[./](?:19|20)\\d{2}`, 'gu')) || []).length;
+    if (dates >= 4) return null;
     const nums = (prose.match(/(?<![\p{L}])\d[\d.,:/]*/gu) || []).length;
     const money = (prose.match(/[₺$€£]\s?\d|\d\s?(?:TL|USD|EUR|₺|€|\$)/g) || []).length;
     const months = (lowTR(prose).match(new RegExp(`(?<![\\p{L}])(?:${LX.MONTHS.join('|')})(?![\\p{L}])`, 'gu')) || []).length;
@@ -147,9 +152,30 @@ const content = [
     };
   },
 
+  // a landing page with headings and buttons but almost nothing said: thin content in Google's sense
+  function thinPage(ctx) {
+    if (ctx.project || ctx.W < 12 || ctx.W >= 120) return null;
+    const heads = ctx.C.headings.length;
+    const ctas = ctx.C.buttons.filter((b) => b.text && wordsOf(b.text).length <= 5).length;
+    if (heads < 2 || ctas < 1) return null;
+    // sign-in, checkout and error pages are short on purpose
+    if (/password|şifre|parola|sign in|log in|giriş yap|404|not found|bulunamadı|checkout|ödeme/i.test(ctx.text)) return null;
+    return {
+      id: 'thin-page', cat: 'content', pts: ctx.W < 60 ? 6 : 4, effort: 'rewrite', needsFacts: true,
+      title: t('A landing page that says almost nothing', 'Neredeyse hiçbir şey söylemeyen sayfa'),
+      detail: t(`${ctx.W} words in ${heads} headings and ${ctas} buttons. Visitors and search engines get a headline and a button, not what it is, for whom, at what price.`,
+        `${heads} başlık ve ${ctas} butonda toplam ${ctx.W} kelime. Ziyaretçi ve arama motoru bir başlık ve buton görüyor; ne olduğunu, kimin için ve ne fiyata olduğunu görmüyor.`),
+      evidence: [`${ctx.W} words`, ...ctx.C.headings.slice(0, 2).map((h) => clip(h.text, 60))],
+      locations: locs(ctx.C.headings.slice(0, 3).map((h) => locOf(h, h.text))),
+      fix: t('Add what only the owner knows: what it does in one concrete example, who it is for, the price or how to get it, a real screenshot.', 'Yalnızca sahibinin bildiklerini ekleyin: tek somut örnekle ne yaptığı, kimin için olduğu, fiyatı ya da nasıl edinileceği, gerçek bir ekran görüntüsü.'),
+    };
+  },
+
   function vanity(ctx) {
     const found = [];
     for (const c of ctx.C.copy) {
+      // stat tiles and badges, not numbers inside reporting prose
+      if (wordsOf(c.text).length > 18) continue;
       const ms = [
         ...(c.text.match(/\d{1,3}(?:[.,]\d{3})+\s?\+|\d+\s?(?:k|K|bin|B|M|million|milyon)\+|\b\d+\+(?=\s|$)/g) || []),
         ...(c.text.match(/%\s?\d{2,3}(?:[.,]\d)?|\d{2,3}(?:[.,]\d)?\s?%/g) || []),
@@ -210,7 +236,7 @@ const content = [
   },
 
   function fakeUrgency(ctx) {
-    const hits = findAll(ctx, LX.URGENCY, 10);
+    const hits = findAll(ctx, LX.URGENCY, 10, { copyOnly: true });
     if (!hits.length) return null;
     return {
       id: 'fake-urgency', cat: 'content', pts: 3, effort: 'quick',
@@ -223,7 +249,7 @@ const content = [
   },
 
   function suspiciousRating(ctx) {
-    const hits = findAll(ctx, LX.SUSPICIOUS_RATING, 3);
+    const hits = findAll(ctx, LX.SUSPICIOUS_RATING, 3, { copyOnly: true });
     if (!hits.length) return null;
     return {
       id: 'suspicious-rating', cat: 'content', pts: 2, effort: 'quick', needsFacts: true,
@@ -699,7 +725,10 @@ const design = [
     // hand-written CSS: what colour is the page by default?
     const bodyBg = (ctx.cssText.match(/(?:^|[}\s,])(?:body|html|:root)\s*\{[^}]*background(?:-color)?\s*:\s*([^;}]+)/i) || [])[1];
     const bgHsl = bodyBg ? colorsIn(resolveVars(bodyBg, ctx.vars))[0] : null;
-    const measuredDark = ctx.vis && ctx.vis.background.luminance < 0.03 && !/prefers-color-scheme/.test(ctx.cssText);
+    // a browser set to dark mode shows the dark theme of a site that has both: only count it in light mode,
+    // or when the stylesheet itself says the default is dark
+    const measuredDark = ctx.vis && ctx.vis.background.luminance < 0.03 && !/prefers-color-scheme/.test(ctx.cssText)
+      && (!ctx.vis.darkScheme || (bgHsl && bgHsl.l <= 9));
     if ((bgHsl && bgHsl.l <= 9 && !/prefers-color-scheme/.test(ctx.cssText)) || measuredDark) {
       return {
         id: 'perma-dark', cat: 'design', pts: 2.5, effort: 'redesign',
@@ -722,13 +751,22 @@ const design = [
 
   function accentStripe(ctx) {
     const hits = ctx.C.classes.filter((c) => /\bborder-[lt]-(?:2|4|8|\[\d+px\])\b/.test(c.value) && /\bborder-(?!white|black|gray|zinc|slate|neutral|transparent)[a-z]+-\d{3}\b/.test(c.value) && /\b(?:rounded|p-\d|px-\d)/.test(c.value));
-    const css = ctx.C.css.filter((c) => /border-(?:left|top):\s*(?:[2-9]|\d{2})px\s+solid/i.test(c.text));
+    // hand-written CSS: only card-like blocks; a quote, code block, menu or active tab with a side rule is ordinary typography
+    const css = [];
+    for (const c of ctx.C.css) {
+      if (!/border-(?:left|top):\s*(?:[2-9]|\d{2})px\s+solid/i.test(c.text)) continue;
+      for (const m of c.text.matchAll(/([^{}]{1,300})\{([^{}]{0,2000})\}/g)) {
+        const sel = m[1];
+        if (!/border-(?:left|top):\s*(?:[2-9]|\d{2})px\s+solid/i.test(m[2])) continue;
+        if (/card|tile|feature|benefit|stat|panel|box|item/i.test(sel) && !/blockquote|\bq\b|\bpre\b|code|nav|aside|menu|toc|tab|focus|active|current|selected|hover|note|warning|tip|alert|callout|quote|table|\btd\b|\bth\b|\bhr\b/i.test(sel)) css.push({ ...c, text: m[0] });
+      }
+    }
     if (hits.length + css.length < 2) return null;
     return {
       id: 'accent-stripe', cat: 'design', pts: Math.min(4, (hits.length + css.length) * 1.2), effort: 'redesign',
       title: t('Coloured stripe on every card', 'Her kartta renkli kenar şeridi'),
       detail: t('Cards marked with a thick coloured left or top border, often a different colour each.', 'Kartlar kalın renkli sol ya da üst kenarla işaretlenmiş, çoğunlukla her biri ayrı renkte.'),
-      evidence: hits.slice(0, 3).map((c) => clip(c.value, 70)),
+      evidence: [...hits.slice(0, 3).map((c) => clip(c.value, 70)), ...css.slice(0, 3 - Math.min(3, hits.length)).map((c) => clip(c.text.replace(/\s+/g, ' '), 70))],
       locations: locs([...hits, ...css].map((c) => locOf(c, c.value || 'border-left'))),
       fix: t('Remove the stripes. If a category must show, use a text label or one shared accent for the active state.', 'Şeritleri kaldırın. Bir kategori gösterilmesi gerekiyorsa metin etiketi ya da yalnızca aktif durum için tek ortak vurgu kullanın.'),
     };
@@ -827,8 +865,9 @@ const design = [
     return {
       id: 'rounded-everything', cat: 'design', pts: 1, effort: 'redesign',
       title: t('Big radius on everything', 'Her şeyde büyük köşe yarıçapı'),
-      detail: t(`${r.length} elements use rounded-xl/2xl/3xl/full.`, `${r.length} öğede rounded-xl/2xl/3xl/full var.`),
-      evidence: [`rounded-* ×${r.length}`],
+      detail: r.length >= 10 ? t(`${r.length} elements use rounded-xl/2xl/3xl/full.`, `${r.length} öğede rounded-xl/2xl/3xl/full var.`)
+        : t(`${ctx.vis.radius.big} boxes on screen have a radius of 12px or more.`, `Ekrandaki ${ctx.vis.radius.big} kutuda 12px ve üzeri köşe yarıçapı var.`),
+      evidence: [r.length >= 10 ? `rounded-* ×${r.length}` : `${ctx.vis.radius.big} large-radius boxes (measured)`],
       fix: t('Set radius by role (inputs, cards, pills) from one small scale.', 'Köşe yarıçapını role göre (girdi, kart, hap) küçük bir ölçekten verin.'),
     };
   },
@@ -984,7 +1023,7 @@ const finish = [
     };
     for (const [k, re, only] of LX.PLACEHOLDER) {
       if (only === 'page' && ctx.C.kind === 'project') continue;
-      const f = findAll(ctx, new RegExp(re.source, 'gi'), 20).filter((x) => !inAttr(x)).slice(0, 10);
+      const f = findAll(ctx, new RegExp(re.source, 'gi'), 20, { copyOnly: true }).filter((x) => !inAttr(x)).slice(0, 10);
       if (f.length) hits.push({ k, f });
     }
     if (!hits.length) return null;
@@ -1187,7 +1226,7 @@ const finish = [
   },
 
   function staleCopyright(ctx) {
-    const hits = findAll(ctx, /(?:©|&copy;|copyright|telif)[^\n<]{0,20}?((?:19|20)\d{2})(?!\s?[-–]\s?(?:19|20)\d{2})/gi, 5)
+    const hits = findAll(ctx, /(?:©|&copy;|copyright|telif)[^\n<]{0,20}?((?:19|20)\d{2})(?!\s?[-–]\s?(?:19|20)\d{2})/gi, 5, { copyOnly: true })
       .filter((h) => +h.m[1] < ctx.now.getFullYear() - 1);
     if (!hits.length) return null;
     return {

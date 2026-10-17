@@ -82,7 +82,7 @@ async function launchBrowser() {
 }
 
 async function renderWith(browser, url, timeoutMs, { visual = false } = {}) {
-  const page = await browser.newPage({ userAgent: UA.replace('compatible; ', ''), viewport: { width: 1366, height: 900 } });
+  const page = await browser.newPage({ userAgent: UA.replace('compatible; ', ''), viewport: { width: 1366, height: 900 }, colorScheme: 'light' });
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: timeoutMs }).catch(() => page.waitForTimeout(3000));
     await page.waitForTimeout(800);

@@ -74,6 +74,8 @@ export async function measureVisual() {
     const bold = (parseInt(s.fontWeight, 10) || 400) >= 700;
     const need = size >= 24 || (bold && size >= 18.66) ? 3 : 4.5;
     const r = ratio(fg.a < 1 ? blend(fg, bg) : fg, bg);
+    // text the same colour as its ground is hidden on purpose (spacers, screen-reader text), not low contrast
+    if (r < 1.15) continue;
     checked++;
     if (r < need) fails.push({ text: label(el), ratio: Math.round(r * 100) / 100, need, fg: hex(fg), bg: hex(bg) });
   }
@@ -112,7 +114,10 @@ export async function measureVisual() {
     const cards = sameW.filter((b) => look(b) === key);
     const styled = cards[0].s.boxShadow !== 'none' || parseFloat(cards[0].s.borderRadius) >= 8 || parseFloat(cards[0].s.borderTopWidth) > 0 || (parse(cards[0].s.backgroundColor)?.a || 0) > 0;
     const titled = cards.every((b) => b.k.querySelector('h2, h3, h4, h5, strong, b') && (b.k.textContent || '').trim().split(/\s+/).length <= 45);
-    if (!styled || !titled) continue;
+    // a list of posts, projects or products (each card a link, or with its own photo) is content, not the feature-card template
+    const listing = cards.filter((b) => b.k.tagName === 'A' || b.k.closest('a[href]') || b.k.querySelector('h2 a[href], h3 a[href], h4 a[href], h5 a[href]')
+      || [...b.k.querySelectorAll('img, picture, video')].some((m) => m.getBoundingClientRect().width >= 120)).length;
+    if (!styled || !titled || listing >= cards.length / 2) continue;
     if (groups.some((g) => g.el.contains(parent) || parent.contains(g.el))) continue;
     groups.push({ el: parent, n: cards.length, sample: label(cards[0].k).slice(0, 50), radius: cards[0].s.borderRadius });
   }

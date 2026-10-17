@@ -229,6 +229,7 @@ Why rules and not an AI judge? In the largest study so far, LLMs asked "is this 
 - **Not an AI-authorship detector.** A page made entirely with AI can score clean, and a hand-written page can score high.
 - **Not a ranking oracle.** The checks follow Google's helpful-content and spam guidance, but the score is not a search ranking.
 - **The Turkish lists are young.** They come from Turkish sources and known English tells; calibration help is welcome.
+- **Calibrated on 34 real sites so far.** On those, pages built with AI tools scored a median of 33 and hand-made pages about 16, before the false-alarm fixes in 0.2.1 ([how and which sites](docs/CALIBRATION.md)).
 
 ## Privacy
 

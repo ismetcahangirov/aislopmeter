@@ -17,9 +17,10 @@ export const splitSentences = (line) =>
     .map((x) => x.trim())
     .filter(Boolean);
 
-export const EMOJI = /\p{Extended_Pictographic}/u;
+// ©, ® and ™ are Extended_Pictographic too, but they are legal marks, not icons
+export const EMOJI = /(?![©®™‼⁉])\p{Extended_Pictographic}/u;
 export const isEmojiOnly = (t) => {
-  const s = String(t).replace(/[️‍\s]/g, '');
+  const s = String(t).replace(/[️‍\s©®™]/g, '');
   return s.length > 0 && s.length <= 8 && /^\p{Extended_Pictographic}+$/u.test(s);
 };
 

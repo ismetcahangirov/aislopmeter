@@ -44,7 +44,9 @@ function countCardGroups(all) {
     const same = kids.filter((k) => sig(k) === best);
     // the template is icon + title + one line; blocks with real paragraphs are content, not cards
     const avgWords = same.reduce((a, k) => a + wordsOf(k.textContent || '').length, 0) / same.length;
-    if (avgWords <= 30 && same.every((k) => k.querySelector('h2,h3,h4,h5,h6,strong') && k.querySelector('p'))) groups++;
+    // a list of posts or projects (linked titles, own photos) is content too
+    const listing = same.filter((k) => tag(k) === 'a' || k.querySelector('h2 a[href],h3 a[href],h4 a[href],h5 a[href]') || (tag(k) === 'li' && k.querySelector('a[href]') && k.querySelector('time'))).length;
+    if (avgWords <= 30 && listing < same.length / 2 && same.every((k) => k.querySelector('h2,h3,h4,h5,h6,strong') && k.querySelector('p'))) groups++;
   }
   return groups;
 }
@@ -111,7 +113,7 @@ function addAssets(C, assets, html, file) {
   const js = [];
   for (const a of assets) {
     const lineAt = lineIndex(a.text);
-    sources.push({ file: a.name, content: a.text, lineAt });
+    sources.push({ file: a.name, content: a.text, lineAt, asset: a.kind });
     if (a.kind === 'css') {
       // one entry per rule block so findings can point at the line
       for (const m of a.text.matchAll(/[^{}]{0,2000}\{[^{}]{0,8000}\}/g)) C.css.push({ text: m[0], loc: { file: a.name, line: lineAt(m.index + (m[0].length - m[0].trimStart().length)) }, ext: true });

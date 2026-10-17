@@ -228,6 +228,7 @@ Neden yapay zekâ hakem değil de kurallar? Bu konudaki en kapsamlı çalışmad
 - **AI ile yazıldığını tespit eden bir araç değildir.** Tamamen AI ile yapılmış bir sayfa temiz çıkabilir, elle yazılmış bir sayfa yüksek skor alabilir.
 - **Arama sıralaması tahmini değildir.** Kontroller Google'ın faydalı içerik ve spam yönergelerine dayanır ama skor bir sıralama değildir.
 - **Türkçe listeler yeni.** Türkçe kaynaklardan ve İngilizce işaretlerin karşılıklarından derlendi; ayar katkısı memnuniyetle karşılanır.
+- **Şimdiye kadar 34 gerçek sitede ayarlandı.** Bu sitelerde AI araçlarıyla yapılan sayfaların medyan puanı 33, elle yapılanlarınki 16 civarındaydı; bu rakamlar 0.2.1'deki yanlış alarm düzeltmelerinden önceki ölçüm ([yöntem ve siteler](docs/CALIBRATION.md)).
 
 ## Gizlilik
 

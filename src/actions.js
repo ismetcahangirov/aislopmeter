@@ -24,6 +24,14 @@ const A = {
     example: t('Before: "A game-changing tool for teams." After: "Cuts our customers\' month-end close from 5 days to 2."',
       'Önce: "Ekipler için çığır açan bir araç." Sonra: "Müşterilerimizin ay sonu kapanışını 5 günden 2 güne indiriyor."'),
   },
+  'thin-page': {
+    steps: [
+      t('Write down, for yourself, what a first-time visitor must know: what it is, who it is for, what it costs or how to get it, why you.', 'Kendiniz için, ilk kez gelen birinin bilmesi gerekenleri yazın: ne olduğu, kimin için olduğu, fiyatı ya da nasıl edinileceği, neden siz.'),
+      t('Add one concrete example of it working (a screenshot, a sample result, a real case) under the headline.', 'Başlığın altına çalıştığını gösteren tek somut örnek ekleyin (ekran görüntüsü, örnek sonuç, gerçek bir vaka).'),
+      t('Put the price or the next real step (a demo, a download, an address) on the page itself.', 'Fiyatı ya da gerçek bir sonraki adımı (demo, indirme, adres) sayfanın kendisine koyun.'),
+    ],
+    done: t('Someone who reads only this page can explain what it is and decide whether it is for them.', 'Yalnızca bu sayfayı okuyan biri bunun ne olduğunu anlatabiliyor ve kendisi için olup olmadığına karar verebiliyor.'),
+  },
   vanity: {
     steps: [
       t('List every big number on the page (users, uptime, "10x", ratings).', 'Sayfadaki her büyük rakamı listeleyin (kullanıcı sayısı, uptime, "10 kat", puan).'),

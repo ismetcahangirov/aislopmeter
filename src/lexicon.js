@@ -127,9 +127,9 @@ export const GENERIC_CTA = [
 /* ---------- unfinished / leftovers ---------- */
 export const PLACEHOLDER = [
   ['lorem', /lorem ipsum|dolor sit amet|consectetur adipiscing/i],
-  ['company', /your company(?: name)?|company name(?: here)?|your name here|şirket ad[ıi]n[ıi]z|şirket ad[ıi]|firma ad[ıi]|acme (?:inc|corp)/i],
+  ['company', /your company name|company name here|your business name|your name here|şirket ad[ıi]n[ıi]z buraya|firma ad[ıi]n[ıi]z buraya|acme (?:inc|corp)/i],
   ['person', /john doe|jane doe|jane smith|john smith|ali veli/i],
-  ['insert', /\[(?:insert|your |buraya|şirket|adınız|firma|ürün|şehir|company|client|product|name|city|isim)[^\]]{0,30}\]|INSERT_[A-Z_]{3,}|PASTE_[A-Z_]*_HERE|\b20\d\d-XX-XX\b/i],
+  ['insert', /(?<![\w$)\]])\[(?:insert|your |buraya|şirket|adınız|firma|ürün|şehir|company|client|product|name|city|isim)[^\]="']{0,30}\]|INSERT_[A-Z_]{3,}|PASTE_[A-Z_]*_HERE|\b20\d\d-XX-XX\b/i],
   // an unrendered {{ variable }} is a leftover only in a rendered page; in Vue/Handlebars sources it is normal
   ['template-var', /\{\{\s*[a-z_]+\s*\}\}/i, 'page'],
   ['example', /example\.com|placeholder text|123 main st|\(555\) ?\d{3}|555-0\d{3}|your-?email@/i],
@@ -234,12 +234,12 @@ export const TW_HEX = new Set(['#0f172a', '#1e293b', '#334155', '#475569', '#647
   '#22c55e', '#16a34a', '#f59e0b', '#eab308', '#ef4444', '#dc2626', '#f97316', '#0ea5e9', '#38bdf8']);
 // effects people paste from snippets and libraries, outside React components
 export const GIMMICK_CODE = [
-  ['typing effect', /isDeleting|new Typed\(|typed\.js|typewriter(?:-effect)?|class=["'][^"']*\btyp(?:ing|ed)\b/i],
+  ['typing effect', /isDeleting|new Typed\(|typed\.js|typewriter-effect|new Typewriter\(|class=["'][^"']*\b(?:typewriter|typ(?:ing|ed))\b/i],
   ['custom cursor', /cursor-follower|cursor-dot|cursor-outline|custom-cursor|class=["'][^"']*\bcursor\b["']|\.cursor\s*\{[^}]*position\s*:\s*(?:fixed|absolute)/i],
   ['particles', /particles\.js|particlesJS|tsparticles|particles-js/i],
   ['floating shapes', /class=["'][^"']*\b(?:cube|blob|orb|floating-shape|shape-\d)\b[^"']*["'][\s\S]{0,200}class=["'][^"']*\b(?:cube|blob|orb|floating-shape|shape-\d)\b/i],
   ['tilt cards', /vanilla-tilt|data-tilt\b|tilt\.js/i],
-  ['scramble text', /scramble|glitch-text|class=["'][^"']*\bglitch\b/i],
+  ['scramble text', /scramble(?:Text|-text|_text|Effect)|useScramble|glitch-text|class=["'][^"']*\bglitch\b/i],
   ['matrix rain', /matrix-rain|matrixRain/i],
 ];
 export const PORTFOLIO_SECTIONS = /^(?:about(?: me)?|skills|tech stack|experience|work experience|projects|my projects|portfolio|contact(?: me)?|services|education|hakkımda|yetenekler(?:im)?|beceriler(?:im)?|deneyim(?:ler(?:im)?)?|projeler(?:im)?|iletişim|hizmetler(?:im)?|eğitim)$/i;

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.1 (2026-10-17)
+
+Calibration on 34 real sites (22 built with AI tools such as Lovable and Bolt, 12 hand-made; see docs/CALIBRATION.md). Fewer false alarms, one new check.
+
+- **New check `thin-page`.** A landing page with headings and buttons but almost no words.
+- **False alarms fixed.**
+  - `placeholder`: code in a site's script bundle (`{{count}}`, `[name="…"]`) and phrases like "for your company" no longer count.
+  - `perma-dark`: a browser set to dark mode no longer makes a light site "dark by default". The CLI's browser now opens pages in light mode.
+  - `accent-stripe`: quotes, code blocks, menus and active tabs with a side rule are ordinary typography.
+  - `card-template`: lists of posts, projects or products (linked titles, own photos) are content, not the feature-card template.
+  - `specificity`: an archive of dated posts is concrete enough.
+  - `vanity`: only numbers in short stat tiles and badges count, not numbers in reporting prose.
+  - `gimmick-effects`: the words "scramble" or "typewriter" in an article are not effects.
+  - `emoji-icons`: ™, © and ® are not emoji.
+  - `stale-copyright`: licence headers in script bundles are ignored.
+  - `low-contrast`: text the same colour as its background (spacers, hidden labels) is skipped.
+- **Tests run on Node 20 under Windows** (the test glob is expanded by a small runner).
+
 ## 0.2.0 (2026-10-17)
 
 - **npm.** `npx -y aislopmeter` works; listed for the MCP Registry (`server.json`).
