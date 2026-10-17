@@ -1,3 +1,5 @@
+// the default suite runs without a browser so results do not depend on the machine
+process.env.AISLOPMETER_BROWSER ??= 'off';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';

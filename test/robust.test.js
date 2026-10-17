@@ -1,3 +1,5 @@
+// the default suite runs without a browser so results do not depend on the machine
+process.env.AISLOPMETER_BROWSER ??= 'off';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
@@ -48,4 +50,16 @@ test('project scans skip repo docs at the root and honour --ignore spellings', a
   const r = await scanProject(dir, { ignore: ['./legacy/'] });
   assert.equal(r.files, 1);
   assert.ok(!r.findings.some((f) => f.id === 'lexicon'));
+});
+
+test('.aislopmeter.json turns checks off and sets the language', async () => {
+  const { scanTarget, badgeJson } = await import('../src/index.js');
+  const dir = await mkdtemp(join(tmpdir(), 'aislopmeter-cfg-'));
+  await writeFile(join(dir, 'index.html'), '<h1>Supercharge your workflow</h1><p>Unlock seamless synergy and elevate your team with our cutting-edge platform.</p><button>Get started</button>');
+  await writeFile(join(dir, '.aislopmeter.json'), JSON.stringify({ disable: ['headline-formula'], lang: 'tr', keep: 'logo' }));
+  const r = await scanTarget(join(dir, 'index.html'));
+  assert.ok(!r.findings.some((f) => f.id === 'headline-formula'));
+  assert.equal(r.config.lang, 'tr');
+  assert.deepEqual(r.config.disable, ['headline-formula']);
+  assert.match(badgeJson(r).message, /^\d+\/100$/);
 });

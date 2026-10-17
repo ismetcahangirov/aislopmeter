@@ -1,8 +1,18 @@
 # Changelog
 
+## 0.2.0 (2026-10-17)
+
+- **npm.** `npx -y aislopmeter` works; listed for the MCP Registry (`server.json`).
+- **One-click install.** Cursor and VS Code buttons, a Claude Desktop extension (`.mcpb`, no Node.js needed), and a Claude Code plugin with a rescue skill (`/plugin marketplace add omergocmen/aislopmeter`).
+- **Measured in a real browser.** With Chrome or Edge installed: computed colours and WCAG contrast, rendered fonts, centred layout, identical cards, large gradients and radii. Without a browser everything still runs from HTML and CSS.
+- **Bookmarklet.** Scan the page you are on, from a bookmark (`dist/aislopmeter.browser.js` via jsDelivr).
+- **Badge and GitHub Action.** `--badge file.svg|.json`; `uses: omergocmen/aislopmeter@v0` writes the report to the job summary and can fail above a limit.
+- **`.aislopmeter.json`.** Turn off checks, set what to keep, defaults for language, pages and the CI limit.
+- **Whole-site scans, site-specific plans and local apps** (see below, now part of this release).
+
 ## 0.1.0 (2026-10-17)
 
-First release.
+First release (GitHub only).
 
 - **Scanning.** Scans a URL (with optional internal-link crawl), a project folder or a single HTML file.
 - **Scoring.** Five scored areas: substance, language patterns, template design, unfinished details, builder traces.

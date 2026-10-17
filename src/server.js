@@ -59,7 +59,7 @@ export function createServer() {
     inputSchema: {
       target: z.string().min(1).describe('A URL (https://example.com, localhost:3000), an absolute or relative project folder path, or a path to an .html file.'),
       pages: z.number().int().min(1).max(200).optional().describe('URL only: how many pages of the site to scan. The site is crawled from sitemap.xml and internal links (robots.txt respected), spread across sections; every page gets its own score and findings. Default 30. Use 1 for only the given page.'),
-      render: z.enum(['auto', 'always', 'never']).optional().describe('URL only: render with the locally installed Chrome/Edge. "auto" renders only when the server returns an empty JavaScript shell. Default auto.'),
+      render: z.enum(['auto', 'always', 'never']).optional().describe('Use the locally installed Chrome/Edge. "auto" (default): measure colours, contrast, fonts and layout in the browser when one is installed, and render pages that arrive as an empty JavaScript shell. "never": HTML and CSS only.'),
       ignore: z.array(z.string()).optional().describe('Folder only: sub-paths to skip, relative to the folder (e.g. ["docs", "src/legacy"]).'),
       include_ui_primitives: z.boolean().optional().describe('Folder only: also scan components/ui (shadcn primitives). Default false.'),
       lang: LANG,

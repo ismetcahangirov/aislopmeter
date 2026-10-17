@@ -1,3 +1,5 @@
+// the default suite runs without a browser so results do not depend on the machine
+process.env.AISLOPMETER_BROWSER ??= 'off';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +32,8 @@ test('MCP server: scan, plan, re-scan with automatic compare', async () => {
     const r2 = await client.callTool({ name: 'slop_scan', arguments: { target } });
     assert.match(r2.content[0].text, /Before \/ after/);
 
-    const path = r2.content[0].text.match(/file:\/\/(\S+\.html)/)[1];
+    // a file:// URL: decode it properly (Windows drive letters, non-ASCII user names like "Ömer")
+    const path = fileURLToPath(r2.content[0].text.match(/(file:\/\/\S+\.html)/)[1]);
     assert.ok(existsSync(path), 'visual report written');
     const rep = await client.callTool({ name: 'slop_report', arguments: { scan_id: id, lang: 'tr' } });
     assert.match(rep.content[0].text, /Görsel rapor/);

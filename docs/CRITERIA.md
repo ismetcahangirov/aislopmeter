@@ -39,6 +39,7 @@ How the numbers work:
 - **Points.** Each finding adds points. Each category is capped at its maximum.
 - **Strengths.** These lower the substance score by up to 10. They include a real address, named people, prices, legal details, an about page and links to independent reviews.
 - **Concentration cap.** An area counts as active when it reaches 25% of its maximum. With one active area the total is capped at 35, with two at 60.
+- **Browser measurements.** With Chrome, Edge or Chromium installed, each page (up to 6 per crawl) is also opened in the browser and measured: computed colours and WCAG contrast, the fonts actually rendered, the share of centred headings and paragraphs, sibling cards with identical size and look, large gradients, big radii and glows. These replace the guesses from class names where they exist. Without a browser the checks fall back to HTML and CSS.
 - **Linked files.** For URLs and `.html` files the page's own stylesheets and scripts (same site, no well-known libraries) are read too, so a purple gradient in `style.css` counts and points at its line.
 - **Bands:** 0–19 clean, 20–39 trace amounts, 40–59 noticeable, 60–79 heavy, 80–100 pure slop.
 - **Multi-page scans:** 0.5 × the weighted mean of the page scores (home page ×2; privacy, terms, sign-in and pages under 80 words left out) plus 0.5 × the worst page, plus checks across pages such as duplicate titles.
@@ -114,6 +115,8 @@ New in this version (language and finish):
 |---|---|---|
 | `headline-formula` | h1/h2 matching formulas such as "Supercharge your…", "…, reimagined", "Your all-in-one…", "Build faster", "for the modern…", "Everything you need to…", "Yapay zekâ destekli…". | Sailop sign 13; 925 Studios. |
 | `stock-microcopy` | Four or more stock phrases: "Get started", "Watch demo", "No credit card required", "Cancel anytime", "Trusted by", "Most popular", "All rights reserved", "Kredi kartı gerekmez"… | Sailop sign 13. |
+| `centred-everything` (design, browser) | 75% or more of headings and paragraphs centred (90% → +3). | Layout convention of AI builders; 925 Studios. |
+| `low-contrast` (browser) | With a browser: 3+ text elements and 6%+ of all text below WCAG 4.5:1 (3:1 for large text), measured on the computed colours. | WCAG 2.2, 1.4.3. |
 | `no-work-shown` (substance) | A portfolio template with no project images and no project or code links. | hustletoai ("no human surfaces"). |
 | `client-shell` (unfinished) | The server sent an empty `#root` shell; the words only appear after JavaScript runs. | Slopdar; hustletoai (SEO). |
 

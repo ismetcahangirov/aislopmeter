@@ -92,7 +92,7 @@ function simulate(r, removeIds) {
 }
 const key = (f) => f.id + '|' + (f.page || '');
 
-export function buildRescuePlan(r, { keep = '', targetScore = 20 } = {}) {
+export function buildRescuePlan(r, { keep = r.config?.keep || '', targetScore = 20 } = {}) {
   const issues = r.findings.filter((f) => f.kind === 'issue');
   const used = new Set();
   const phases = [];

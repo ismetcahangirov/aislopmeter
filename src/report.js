@@ -4,7 +4,7 @@ import { ORDER } from './score.js';
 const L = {
   en: {
     report: 'AI Slop Meter report', score: 'Slop score', scanId: 'Scan id', words: 'words', lang: 'page language',
-    files: 'source files', rendered: 'rendered with a local browser',
+    files: 'source files', rendered: 'rendered with a local browser', visual: 'colours, fonts and layout measured in a browser',
     cats: { content: 'Substance', language: 'Language patterns', design: 'Template design', finish: 'Unfinished details', builder: 'Builder traces' },
     bands: { clean: 'Clean', trace: 'Trace amounts', noticeable: 'Noticeable slop', heavy: 'Heavy slop', pure: 'Pure slop' },
     bandText: {
@@ -17,6 +17,7 @@ const L = {
     issues: 'Findings, highest impact first', strengths: 'What already helps (lowers the score)', builder: 'Builder traces',
     evidence: 'Evidence', where: 'Where', fix: 'Fix', steps: 'Steps', example: 'Example', doneWhen: 'Done when', needsFacts: 'needs real facts from the owner', page: 'page',
     effort: { quick: 'quick fix', rewrite: 'rewrite', redesign: 'redesign', replace: 'replace' },
+    configOff: (ids) => `Turned off in .aislopmeter.json: ${ids.join(', ')}.`,
     pages: 'Pages', notes: 'Notes', next: 'Next step', failed: 'failed', issuesCol: 'Findings', topCol: 'Biggest problems',
     pagesLead: 'Every page scanned, worst first. The site score is half the average page (the home page counts double, legal and sign-in pages are left out) and half the worst page.',
     onPages: (n) => `on ${n} page${n === 1 ? '' : 's'}`,
@@ -38,7 +39,7 @@ const L = {
   },
   tr: {
     report: 'AI Slop Meter raporu', score: 'Slop skoru', scanId: 'Tarama no', words: 'kelime', lang: 'sayfa dili',
-    files: 'kaynak dosya', rendered: 'yerel tarayıcıyla render edildi',
+    files: 'kaynak dosya', rendered: 'yerel tarayıcıyla render edildi', visual: 'renk, font ve düzen tarayıcıda ölçüldü',
     cats: { content: 'İçerik özü', language: 'Dil kalıpları', design: 'Şablon tasarım', finish: 'Özensiz detaylar', builder: 'Üretici izleri' },
     bands: { clean: 'Temiz', trace: 'İz miktarda', noticeable: 'Belirgin slop', heavy: 'Yoğun slop', pure: 'Saf slop' },
     bandText: {
@@ -51,6 +52,7 @@ const L = {
     issues: 'Bulgular, etkisi en yüksekten', strengths: 'Şimdiden işe yarayanlar (skoru düşürür)', builder: 'Üretici izleri',
     evidence: 'Kanıt', where: 'Konum', fix: 'Düzeltme', steps: 'Adımlar', example: 'Örnek', doneWhen: 'Bitti sayılır', needsFacts: 'sahibinden gerçek bilgi gerekir', page: 'sayfa',
     effort: { quick: 'hızlı düzeltme', rewrite: 'yeniden yazım', redesign: 'yeniden tasarım', replace: 'değiştirme' },
+    configOff: (ids) => `.aislopmeter.json ile kapatılanlar: ${ids.join(', ')}.`,
     pages: 'Sayfalar', notes: 'Notlar', next: 'Sonraki adım', failed: 'açılamadı', issuesCol: 'Bulgu', topCol: 'En büyük sorunlar',
     pagesLead: 'Taranan her sayfa, en kötüden başlayarak. Site skorunun yarısı ortalama sayfadan (ana sayfa iki kat sayılır, yasal metin ve giriş sayfaları hariç), yarısı en kötü sayfadan gelir.',
     onPages: (n) => `${n} sayfada`,
@@ -96,8 +98,10 @@ export function renderReport(r, { lang = 'en', maxFindings = 25, maxLocations = 
   const meta = [`${T.scanId}: \`${r.id}\``, `${r.words} ${T.words}`, `${T.lang}: ${r.lang}`];
   if (r.kind === 'project') meta.push(`${r.files} ${T.files}`);
   if (r.rendered) meta.push(T.rendered);
+  if (r.visual) meta.push(T.visual);
   out.push(meta.join(' · '));
   if (r.capped) out.push(`\n_${T.capped}_`);
+  if (r.config?.disable?.length) out.push(`\n_${T.configOff(r.config.disable)}_`);
 
   if (r.pages && r.pages.length > 1) {
     const okPages = r.pages.filter((p) => !p.error).sort((a, b) => b.total - a.total);

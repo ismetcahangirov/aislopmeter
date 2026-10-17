@@ -6,8 +6,9 @@ import { corpusFromHtml } from './corpus/html.js';
 import { corpusFromProject } from './corpus/project.js';
 import { runRules } from './rules.js';
 import { finalize, combinePages, severityOf } from './score.js';
-import { loadPage, looksLikeShell, linkedAssets } from './fetch.js';
+import { loadPage, looksLikeShell, linkedAssets, openRenderer } from './fetch.js';
 import { crawlSite } from './crawl.js';
+import { loadConfig } from './config.js';
 import { remember } from './store.js';
 import { guessPageType } from './interview.js';
 import { attachActions } from './actions.js';
@@ -17,18 +18,23 @@ export { buildRescuePlan, renderRescuePlan } from './rescue.js';
 export { getScan, listScans, historyOf } from './store.js';
 export { renderHtml, saveReport, openInBrowser, reportDir } from './html.js';
 export { fixPrompt, actionsFor } from './actions.js';
+export { loadConfig, CONFIG_FILE } from './config.js';
+export { badgeSvg, badgeJson } from './badge.js';
 
 async function analyzeCorpus(C, opts) {
-  const { findings, words, lang } = await runRules(C, opts);
+  let { findings, words, lang } = await runRules(C, opts);
+  // checks switched off in .aislopmeter.json
+  if (opts.disable?.length) { const off = new Set(opts.disable); findings = findings.filter((f) => !off.has(f.id) && !off.has(f.id.replace(/^strength-/, ''))); }
   const ids = new Set(findings.map((f) => f.id));
   const pageType = ids.has('portfolio-template') || ids.has('no-work-shown') ? 'portfolio' : guessPageType(C.text);
   return finalize({ findings: attachActions(findings), words, lang, pageType });
 }
 
-export async function scanHtml(html, { url = '', file = null, now, assets = [], shell = false } = {}) {
+export async function scanHtml(html, { url = '', file = null, now, assets = [], shell = false, visual = null, disable } = {}) {
   const C = corpusFromHtml(html, { url, file, assets });
   C.serverShell = shell;
-  const r = await analyzeCorpus(C, { now });
+  C.visual = visual;
+  const r = await analyzeCorpus(C, { now, disable });
   const notes = [];
   if (r.words < 40 && C.shellRoot) notes.push({ code: 'shell' });
   else if (r.words < 120) notes.push({ code: 'low-text' });
@@ -51,19 +57,22 @@ export const MAX_PAGES = 200;
  * Scan a site. pages = 1 scans only the given URL; more crawls the site
  * (sitemap.xml, then internal links) and gives each page its own report.
  */
-export async function scanUrl(input, { pages = DEFAULT_PAGES, render = 'auto', now, budgetMs, concurrency, onPage } = {}) {
+export async function scanUrl(input, { pages = DEFAULT_PAGES, render = "auto", now, budgetMs, concurrency, onPage, disable } = {}) {
   const n = pages === 'all' ? MAX_PAGES : Math.max(1, Math.min(MAX_PAGES, pages | 0 || DEFAULT_PAGES));
   if (n === 1) {
     const first = await loadPage(input, { render });
     // a page that was not rendered can be traced back to lines of the HTML the server sent
-    const main = await scanHtml(first.html, { url: first.url, now, assets: first.assets, shell: first.shell, file: first.rendered ? null : pageFileName(first.url) });
+    const main = await scanHtml(first.html, { url: first.url, now, disable, assets: first.assets, shell: first.shell, visual: first.visual, file: first.rendered ? null : pageFileName(first.url) });
+    main.visual = !!first.visual;
     main.rendered = first.rendered;
+    // after a successful render the scores are about the real page, not the shell
+    if (first.rendered) main.notes = main.notes.filter((x) => x.code !== 'shell');
     main.notes.push(...first.notes);
     return remember({ ...main, target: first.url });
   }
   const crawl = await crawlSite(input, {
     max: n, render, budgetMs, concurrency, onPage, fileName: pageFileName,
-    scan: (html, url, extra = {}) => scanHtml(html, { url, now, ...extra }),
+    scan: (html, url, extra = {}) => scanHtml(html, { url, now, disable, ...extra }),
   });
   const ok = crawl.pages.filter((r) => !r.error);
   // a site that turned out to have one page is just a page
@@ -141,10 +150,10 @@ export function pageOf(scan, which) {
   return scan.pageResults.find((p) => p.path === key || norm(p.path) === norm(key) || p.url === w) || null;
 }
 
-export async function scanProject(dir, { ignore = [], includeUi = false, now } = {}) {
+export async function scanProject(dir, { ignore = [], includeUi = false, now, disable } = {}) {
   const root = resolve(dir);
   const C = await corpusFromProject(root, { ignore, includeUi });
-  const r = await analyzeCorpus(C, { now });
+  const r = await analyzeCorpus(C, { now, disable });
   const notes = [];
   if (C.files === 0) notes.push({ code: 'no-files' });
   if (C.skippedLarge) notes.push({ code: 'skipped-large', count: C.skippedLarge });
@@ -174,14 +183,26 @@ async function localAssets(html, absPath, shownPath) {
 export async function scanTarget(target, opts = {}) {
   const s = String(target || '').trim();
   if (!s) throw new Error('Nothing to scan: give a URL, an .html file or a project folder.');
+  // .aislopmeter.json in the project (or the working directory) sets defaults; explicit options win
+  const cfg = opts.config === false ? {} : await loadConfig(s);
+  opts = { ...cfg, ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) };
+  if (cfg.ignore && opts.ignore !== cfg.ignore) opts.ignore = [...new Set([...(cfg.ignore || []), ...(opts.ignore || [])])];
+  const withConfig = (r) => { if (cfg.file) { r.config = { file: cfg.file, disable: cfg.disable || [], keep: cfg.keep || '', lang: cfg.lang, targetScore: cfg.targetScore, failAbove: cfg.failAbove }; } return r; };
   const st = await stat(resolve(s)).catch(() => null);
-  if (st?.isDirectory()) { const r = await scanProject(s, opts); r.display = s; return r; }
+  if (st?.isDirectory()) { const r = await scanProject(s, opts); r.display = s; return withConfig(r); }
   if (st?.isFile()) {
     if (!/\.html?$/i.test(extname(s))) throw new Error('Single files must be .html. For a project, pass its folder.');
     const html = await readFile(resolve(s), 'utf8');
     const file = s.replace(/\\/g, '/');
     const assets = await localAssets(html, resolve(s), file);
-    return remember({ ...(await scanHtml(html, { url: '', file, now: opts.now, assets })), target: resolve(s), display: s, kind: 'page' });
+    // open the file in the local browser too, for the visual measurements (skipped without a browser)
+    let visual = null;
+    if (opts.render !== 'never' && opts.visual !== false) {
+      const r = await openRenderer();
+      try { if (r.available) visual = (await r.render(pathToFileURL(resolve(s)).toString(), { visual: true })).visual || null; } finally { await r.close(); }
+    }
+    const res = await scanHtml(html, { url: '', file, now: opts.now, assets, visual, disable: opts.disable });
+    return withConfig(remember({ ...res, visual: !!visual, target: resolve(s), display: s, kind: 'page' }));
   }
   // Decide URL vs. missing local path without sending a request for things that are clearly files.
   const hostWithPath = /^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w-]+(?:\.[\w-]+)+)(?::\d+)?\//i.test(s);
@@ -189,7 +210,7 @@ export async function scanTarget(target, opts = {}) {
   const pathLike = !/^https?:\/\//i.test(s) && !hostWithPath && /[\\/]/.test(s);
   const looksLocal = bareWebFile || pathLike;
   if (looksLocal) throw new Error(`File or folder not found: ${s}`);
-  if (/^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w-]+(?:\.[\w-]+)+)(?::\d+)?(?:[/?#].*)?$/i.test(s)) return scanUrl(s, opts);
+  if (/^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w-]+(?:\.[\w-]+)+)(?::\d+)?(?:[/?#].*)?$/i.test(s)) return withConfig(await scanUrl(s, opts));
   throw new Error(`Could not find "${s}" as a folder or file, and it does not look like a URL.`);
 }
 

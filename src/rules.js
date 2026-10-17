@@ -29,6 +29,8 @@ export function buildContext(C, { now = new Date() } = {}) {
     cssText: C.css.map((c) => c.text).join('\n'),
     vars: cssVarMap(C.css.map((c) => c.text).join('\n')),
     jsText: C.jsText || '',
+    // measurements from a real browser, when one was available (src/visual.js)
+    vis: C.visual || null,
   };
 }
 
@@ -599,6 +601,7 @@ const design = [
       const stops = toks.filter((x) => TW_PURPLE.test(x) || (TW_ARB.test(x) && isPurple(hexToHsl(x.match(TW_ARB)[1]))));
       if (stops.length) { ev.push(stops.join(' ')); L.push(locOf(c, c.value)); }
     }
+    for (const g of ctx.vis?.gradients || []) if (colorsIn(g.css).some(isPurple) && !ev.length) ev.push(`${clip(g.css, 70)} (${Math.round(g.area * 100)}% of the screen)`);
     if (!ev.length) return null;
     return {
       id: 'purple-gradient', cat: 'design', pts: ev.length >= 2 ? 6 : 4, effort: 'redesign',
@@ -613,7 +616,7 @@ const design = [
   function gradientText(ctx) {
     const hit = ctx.C.classes.filter((c) => /\bbg-clip-text\b/.test(c.value) && /\btext-transparent\b/.test(c.value));
     const cssHit = ctx.C.css.filter((c) => /background-clip:\s*text/i.test(c.text));
-    if (!hit.length && !cssHit.length) return null;
+    if (!hit.length && !cssHit.length && !(ctx.vis?.gradientText > 0)) return null;
     return {
       id: 'gradient-text', cat: 'design', pts: 2, effort: 'redesign',
       title: t('Gradient headline text', 'Gradyanlı başlık yazısı'),
@@ -632,7 +635,7 @@ const design = [
     const glow = ctx.C.css.flatMap((c) => [...c.text.matchAll(/(?:box|text)-shadow\s*:\s*0(?:px)?\s+0(?:px)?\s+(\d{1,3})px(?:\s+\d+px)?\s+([^;}]+)/gi)]
       .filter((m) => +m[1] >= 8 && (colorsIn(resolveVars(m[2], ctx.vars)).some((x) => x.s >= 35) || /var\(--[\w-]*(?:glow|accent|primary|neon)/i.test(m[2])))
       .map((m) => ({ tok: `glow ${m[1]}px`, loc: c.loc })));
-    const all = [...toks, ...css, ...glow];
+    const all = [...toks, ...css, ...glow, ...Array.from({ length: Math.min(4, ctx.vis?.glows >= 3 ? ctx.vis.glows : 0) }, () => ({ tok: 'glowing shadow (measured)', loc: null }))];
     if (all.length < 2) return null;
     return {
       id: 'glow-glass', cat: 'design', pts: Math.min(4, all.length * 0.6), effort: 'redesign',
@@ -659,7 +662,7 @@ const design = [
 
   function cardTemplate(ctx) {
     const grid = ctx.classTokens.filter((x) => /^(?:[\w-]+:)*grid-cols-[34]$/.test(x.tok));
-    const groups = ctx.C.cardGroups + ctx.C.featureArrays;
+    const groups = Math.max(ctx.C.cardGroups, ctx.vis?.cards?.groups || 0) + ctx.C.featureArrays;
     const score = groups + (grid.length >= 3 ? 1 : 0);
     if (score < 1) return null;
     const pts = score >= 3 ? 4 : score === 2 ? 2.5 : 1;
@@ -674,7 +677,8 @@ const design = [
   },
 
   function defaultFont(ctx) {
-    const f = ctx.C.fonts || '';
+    const v = ctx.vis?.fonts ? Object.values(ctx.vis.fonts).filter(Boolean) : [];
+    const f = (ctx.C.fonts || '') + ' ' + v.join(' ');
     const primary = f.match(LX.FONT_PRIMARY);
     const trend = f.match(LX.FONT_TREND);
     if (!primary && !trend) return null;
@@ -695,12 +699,13 @@ const design = [
     // hand-written CSS: what colour is the page by default?
     const bodyBg = (ctx.cssText.match(/(?:^|[}\s,])(?:body|html|:root)\s*\{[^}]*background(?:-color)?\s*:\s*([^;}]+)/i) || [])[1];
     const bgHsl = bodyBg ? colorsIn(resolveVars(bodyBg, ctx.vars))[0] : null;
-    if (bgHsl && bgHsl.l <= 9 && !/prefers-color-scheme/.test(ctx.cssText)) {
+    const measuredDark = ctx.vis && ctx.vis.background.luminance < 0.03 && !/prefers-color-scheme/.test(ctx.cssText);
+    if ((bgHsl && bgHsl.l <= 9 && !/prefers-color-scheme/.test(ctx.cssText)) || measuredDark) {
       return {
         id: 'perma-dark', cat: 'design', pts: 2.5, effort: 'redesign',
         title: t('Dark by default, for no reason', 'Sebepsiz yere varsayılan karanlık'),
         detail: t('The page opens near-black whatever the visitor\'s setting. One of the most common looks on AI-built sites; a theme toggle does not change the first impression.', 'Sayfa ziyaretçinin ayarından bağımsız olarak siyaha yakın açılıyor. AI ile yapılmış sitelerin en yaygın görünümlerinden; tema düğmesi ilk izlenimi değiştirmiyor.'),
-        evidence: [clip(`background: ${bodyBg.trim()}${bodyBg.includes('var(') ? ` = ${resolveVars(bodyBg, ctx.vars).trim()}` : ''}`, 80)],
+        evidence: [bodyBg ? clip(`background: ${bodyBg.trim()}${bodyBg.includes('var(') ? ` = ${resolveVars(bodyBg, ctx.vars).trim()}` : ''}`, 80) : `background ${ctx.vis.background.color} (measured)`],
         fix: t('Follow prefers-color-scheme, or choose dark only if the subject calls for it (night, film, code). If it stays dark, use 3-4 surface levels and body text at 7:1 contrast.', 'prefers-color-scheme ayarını izleyin ya da koyu temayı yalnızca konu gerektiriyorsa seçin (gece, film, kod). Koyu kalacaksa 3-4 yüzey seviyesi ve 7:1 kontrastlı gövde metni kullanın.'),
       };
     }
@@ -818,7 +823,7 @@ const design = [
 
   function roundedEverything(ctx) {
     const r = ctx.classTokens.filter((x) => /^(?:[\w-]+:)*rounded-(?:xl|2xl|3xl|full)$/.test(x.tok));
-    if (r.length < 10) return null;
+    if (r.length < 10 && !(ctx.vis?.radius?.big >= 15)) return null;
     return {
       id: 'rounded-everything', cat: 'design', pts: 1, effort: 'redesign',
       title: t('Big radius on everything', 'Her şeyde büyük köşe yarıçapı'),
@@ -933,6 +938,20 @@ const design = [
       evidence: hits.length ? [clip(hits[0].text.replace(/\s+/g, ' '), 80)] : [clip(tw[0].value, 60)],
       locations: locs([...hits.map((c) => locOf(c, '::after')), ...tw.map((c) => locOf(c, c.value))]),
       fix: t('Let spacing and type size mark sections. If a divider is needed, use one consistent rule across the page.', 'Bölümleri boşluk ve yazı boyutu ayırsın. Ayırıcı gerekiyorsa sayfa genelinde tek tutarlı bir çizgi kullanın.'),
+    };
+  },
+
+  function centredEverything(ctx) {
+    const c = ctx.vis?.centred;
+    if (!c || c.blocks < 10) return null;
+    const share = c.centred / c.blocks;
+    if (share < 0.75) return null;
+    return {
+      id: 'centred-everything', cat: 'design', pts: share >= 0.9 ? 3 : 2, effort: 'redesign',
+      title: t('Everything is centred', 'Her şey ortalanmış'),
+      detail: t(`Measured in the browser: ${c.centred} of ${c.blocks} headings and paragraphs are centred. A page where every block sits in the middle has no reading line and no hierarchy.`, `Tarayıcıda ölçüldü: ${c.blocks} başlık ve paragrafın ${c.centred} tanesi ortalanmış. Her bloğun ortada durduğu sayfada okuma çizgisi ve hiyerarşi kalmaz.`),
+      evidence: [`${Math.round(share * 100)}% centred`],
+      fix: t('Left-align body text and most headings; keep centring for one or two moments (the hero, a closing line).', 'Gövde metnini ve çoğu başlığı sola hizalayın; ortalamayı bir iki ana bırakın (hero, kapanış satırı).'),
     };
   },
 
@@ -1089,6 +1108,17 @@ const finish = [
   },
 
   function lowContrast(ctx) {
+    const cv = ctx.vis?.contrast;
+    if (cv && cv.checked >= 10) {
+      if (cv.failed < 3 || cv.failed / cv.checked < 0.06) return null;
+      return {
+        id: 'low-contrast', cat: 'finish', pts: Math.min(3, 1 + cv.failed * 0.15), effort: 'quick',
+        title: t('Text too light to read', 'Okunamayacak kadar açık metin'),
+        detail: t(`Measured in the browser: ${cv.failed} of ${cv.checked} text elements are below the WCAG contrast minimum (4.5:1, or 3:1 for large text).`, `Tarayıcıda ölçüldü: ${cv.checked} metin öğesinden ${cv.failed} tanesi WCAG kontrast sınırının altında (4.5:1, büyük yazıda 3:1).`),
+        evidence: cv.worst.map((w) => `«${w.text}» ${w.ratio}:1 (${w.fg} / ${w.bg}, needs ${w.need}:1)`),
+        fix: t('Darken the text (or lighten the background) until each listed item reaches its minimum.', 'Listelenen her öğe sınırına ulaşana kadar metni koyulaştırın ya da zemini açın.'),
+      };
+    }
     const darkPage = ctx.classTokens.some((x) => /^bg-(?:gray|zinc|slate|neutral|stone)-(?:800|900|950)$|^bg-black$/.test(x.tok));
     if (darkPage) return null;
     const light = ctx.classTokens.filter((x) => /^text-(?:gray|slate|zinc|neutral|stone)-(?:300|400)$/.test(x.tok));

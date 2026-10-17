@@ -1,0 +1,12 @@
+{
+  "name": "aislopmeter",
+  "description": "AI Slop Meter for Claude Code",
+  "owner": { "name": "Ömer Göçmen", "url": "https://github.com/omergocmen" },
+  "plugins": [
+    {
+      "name": "aislopmeter",
+      "source": "./plugin",
+      "description": "Score AI slop on websites, local apps and projects, and fix it step by step. MCP server plus a rescue skill."
+    }
+  ]
+}

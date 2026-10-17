@@ -9,6 +9,8 @@ const SKIP_EXT = /\.(?:pdf|jpe?g|png|gif|webp|avif|svg|ico|zip|gz|rar|7z|mp3|mp4
 const SKIP_PATH = /^\/(?:wp-admin|wp-json|wp-login|xmlrpc|cdn-cgi|feed|comments\/feed|cart|checkout|my-account|account|login|signin|sign-in|logout|admin)(?:\/|$)|\/(?:feed|amp)\/?$/i;
 const TRACKING = /^(?:utm_\w+|gclid|fbclid|msclkid|mc_cid|mc_eid|ref|ref_src|_ga|_gl|yclid|igshid|replytocom)$/i;
 const AGENT = 'aislopmeter';
+// pages measured in the browser during a crawl (the rest are read from HTML and CSS)
+const VISUAL_PAGES = 6;
 
 const bareHost = (h) => h.toLowerCase().replace(/^www\./, '');
 
@@ -122,16 +124,18 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
   const startUrl = normalizeUrl(input);
   const notes = [];
   const assetCache = new Map();
-  const first = await loadPage(startUrl, { render, assetCache });
+  // one browser for the whole crawl, when one is installed
+  let renderer = render === 'never' ? null : await openRenderer();
+  if (renderer && !renderer.available) renderer = null;
+  let visualLeft = VISUAL_PAGES;
+  const first = await loadPage(startUrl, { render, assetCache, renderer: renderer || undefined, visual: !!renderer });
+  if (first.visual) visualLeft--;
   const base = new URL(first.url);
   const origin = base.origin;
   const results = [];
   const done = new Set([pageKey(first.url), pageKey(startUrl)]);
 
-  // keep one browser open for the whole crawl when the site needs rendering
-  let renderer = null;
   const needsRender = render === 'always' || first.rendered;
-  const getRenderer = async () => (renderer ||= await openRenderer());
 
   const robotsTxt = max > 1 ? await fetchText(`${origin}/robots.txt`) : null;
   const robots = parseRobots(robotsTxt);
@@ -148,7 +152,7 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
     pool.set(key, { url: u.toString(), depth, from });
   };
 
-  results.push(await scanOne(first.url, first.html, first.rendered, first.notes, { assets: first.assets, shell: first.shell, file: first.rendered ? null : fileName(first.url) }));
+  results.push(await scanOne(first.url, first.html, first.rendered, first.notes, { assets: first.assets, shell: first.shell, visual: first.visual, file: first.rendered ? null : fileName(first.url) }));
   onPage?.(results[0], 1, max);
 
   if (max > 1) {
@@ -180,6 +184,7 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
     const path = (() => { const u = new URL(url); return (u.pathname || '/') + u.search; })();
     const r = await scan(html, url, extra);
     r.rendered = rendered;
+    if (rendered) r.notes = r.notes.filter((x) => x.code !== 'shell');
     if (pageNotes.length) r.notes.push(...pageNotes);
     return { path, url, ...r, html };
   }
@@ -204,12 +209,16 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
         done.add(k2);
         let html = got.html, rendered = false;
         const shell = looksLikeShell(html);
-        if (needsRender || (render === 'auto' && shell)) {
-          const rr = await (await getRenderer()).render(got.finalUrl);
-          if (rr.html) { html = rr.html; rendered = true; }
+        let visual = null;
+        const wantVisual = renderer && visualLeft > 0;
+        if (renderer && (needsRender || (render === 'auto' && shell) || wantVisual)) {
+          if (wantVisual) visualLeft--;
+          const rr = await renderer.render(got.finalUrl, { visual: wantVisual });
+          if (rr.html && (needsRender || (render === 'auto' && shell))) { html = rr.html; rendered = true; }
+          visual = rr.visual || null;
         }
         const assets = await fetchAssets(html, got.finalUrl, assetCache);
-        const page = await scanOne(got.finalUrl, html, rendered, [], { assets, shell, file: rendered ? null : fileName(got.finalUrl) });
+        const page = await scanOne(got.finalUrl, html, rendered, [], { assets, shell, visual, file: rendered ? null : fileName(got.finalUrl) });
         results.push(page);
         for (const l of linksOf(html, got.finalUrl)) add(l, c.depth + 1, 'link');
         onPage?.(page, results.length, max);

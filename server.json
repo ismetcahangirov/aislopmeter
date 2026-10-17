@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.omergocmen/aislopmeter",
+  "description": "Scores AI slop on a website, local app or project folder and gives site-specific, step-by-step fixes.",
+  "repository": {
+    "url": "https://github.com/omergocmen/aislopmeter",
+    "source": "github"
+  },
+  "websiteUrl": "https://aislopmeter.netlify.app",
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "aislopmeter",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}

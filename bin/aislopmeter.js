@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // aislopmeter <url | folder | file.html> [options]
 // aislopmeter mcp            start the MCP server on stdio
-import { scanTarget, renderReport, buildRescuePlan, renderRescuePlan, saveReport, openInBrowser } from '../src/index.js';
+import { scanTarget, renderReport, buildRescuePlan, renderRescuePlan, saveReport, openInBrowser, badgeSvg, badgeJson } from '../src/index.js';
+import { writeFile } from 'node:fs/promises';
 import { VERSION } from '../src/version.js';
 import { pathToFileURL } from 'node:url';
 
@@ -13,7 +14,8 @@ Usage
 
 Options
   --pages <n|all>     URL: how many pages to crawl (default 30, all = up to 200, 1 = only this page)
-  --render <mode>     URL: auto | always | never  (uses your installed Chrome/Edge)
+  --render <mode>     auto | always | never. auto: if Chrome/Edge is installed, measure colours,
+                      contrast, fonts and layout in it and render pages that need JavaScript
   --ignore <a,b>      folder: sub-paths to skip
   --include-ui        folder: also scan components/ui
   --lang <en|tr>      report language (default en)
@@ -22,6 +24,9 @@ Options
   --open              write the visual report and open it in your browser
   --json              print the raw result as JSON
   --fail-above <n>    exit with code 1 when the score is above n (for CI)
+  --badge <file>      write a README badge: .svg, or .json for a shields.io endpoint
+  --json-file <file>  also write the raw result as JSON to a file
+  --no-config         ignore .aislopmeter.json
   -v, --version       print the version
   -h, --help          print this help
 
@@ -49,6 +54,9 @@ function parse(argv) {
     else if (a === '--lang') o.lang = val();
     else if (a === '--ignore') o.ignore = String(val() || '').split(',').filter(Boolean);
     else if (a === '--fail-above') o.failAbove = +val();
+    else if (a === '--badge') o.badge = val();
+    else if (a === '--json-file') o.jsonFile = val();
+    else if (a === '--no-config') o.noConfig = true;
     else if (a.startsWith('--')) { console.error(`Unknown option ${a}\n`); o.help = true; o.bad = true; }
     else o._.push(a);
   }
@@ -70,10 +78,11 @@ if (o._[0] === 'mcp') {
   process.exit(o.bad ? 2 : 0);
 } else {
   try {
-    const lang = o.lang === 'tr' ? 'tr' : 'en';
+    let lang = o.lang === 'tr' ? 'tr' : 'en';
     // progress on stderr, so --json output stays clean
     const onPage = process.stderr.isTTY ? (p, done, total) => process.stderr.write(`\r\x1b[K${done}/${total} ${p.path.slice(0, 70)}`) : undefined;
-    const r = await scanTarget(o._[0], { pages: o.pages, render: o.render, ignore: o.ignore, includeUi: o.includeUi, onPage, budgetMs: 600000 });
+    const r = await scanTarget(o._[0], { pages: o.pages, render: o.render, ignore: o.ignore, includeUi: o.includeUi, onPage, budgetMs: 600000, config: o.noConfig ? false : undefined });
+    if (!o.lang && r.config && ['en', 'tr'].includes(r.config.lang)) lang = r.config.lang;
     if (onPage) process.stderr.write('\r\x1b[K');
     if (o.json) {
       const out = o.plan ? { ...r, plan: buildRescuePlan(r) } : r;
@@ -87,7 +96,10 @@ if (o._[0] === 'mcp') {
       console.error(`\n${lang === 'tr' ? 'Görsel rapor' : 'Visual report'}: ${pathToFileURL(file).href}`);
       if (o.open && !(await openInBrowser(file))) console.error(lang === 'tr' ? 'Tarayıcı açılamadı; dosyayı kendiniz açın.' : 'Could not open a browser; open the file yourself.');
     }
-    if (Number.isFinite(o.failAbove) && r.total > o.failAbove) process.exit(1);
+    if (o.badge) await writeFile(o.badge, /\.json$/i.test(o.badge) ? JSON.stringify(badgeJson(r)) + '\n' : badgeSvg(r));
+    if (o.jsonFile) await writeFile(o.jsonFile, JSON.stringify(r, null, 2));
+    const failAbove = Number.isFinite(o.failAbove) ? o.failAbove : Number.isFinite(r.config?.failAbove) ? r.config.failAbove : null;
+    if (failAbove !== null && r.total > failAbove) process.exit(1);
   } catch (e) {
     console.error(`aislopmeter: ${e.message || e}`);
     process.exit(2);

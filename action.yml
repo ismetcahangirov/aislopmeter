@@ -1,0 +1,61 @@
+name: AI Slop Meter
+description: Score AI slop on a website, preview URL or project folder, write the report to the job summary, and fail above a threshold.
+author: Ömer Göçmen
+branding:
+  icon: activity
+  color: red
+inputs:
+  target:
+    description: URL, localhost address, project folder or .html file to scan
+    default: '.'
+  fail-above:
+    description: Fail the job when the score is above this number (empty = never fail)
+    default: ''
+  pages:
+    description: For URLs, how many pages to crawl
+    default: '30'
+  lang:
+    description: Report language (en or tr)
+    default: en
+  badge:
+    description: Optional path to write a badge (.svg, or .json for a shields.io endpoint)
+    default: ''
+  version:
+    description: aislopmeter version from npm
+    default: latest
+outputs:
+  score:
+    description: The slop score (0-100)
+    value: ${{ steps.scan.outputs.score }}
+  band:
+    description: clean, trace, noticeable, heavy or pure
+    value: ${{ steps.scan.outputs.band }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - id: scan
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        PAGES: ${{ inputs.pages }}
+        LANG_IN: ${{ inputs.lang }}
+        BADGE: ${{ inputs.badge }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -e
+        args=("$TARGET" --pages "$PAGES" --lang "$LANG_IN" --json-file "$RUNNER_TEMP/aislopmeter.json")
+        if [ -n "$BADGE" ]; then args+=(--badge "$BADGE"); fi
+        npx -y "aislopmeter@$VERSION" "${args[@]}" > "$RUNNER_TEMP/aislopmeter.md"
+        cat "$RUNNER_TEMP/aislopmeter.md" >> "$GITHUB_STEP_SUMMARY"
+        node -e "const r=require(process.argv[1]);console.log('score='+r.total);console.log('band='+r.band)" "$RUNNER_TEMP/aislopmeter.json" >> "$GITHUB_OUTPUT"
+    - if: ${{ inputs.fail-above != '' }}
+      shell: bash
+      env:
+        SCORE: ${{ steps.scan.outputs.score }}
+        LIMIT: ${{ inputs.fail-above }}
+      run: |
+        if [ "$SCORE" -gt "$LIMIT" ]; then echo "::error::AI slop score $SCORE is above $LIMIT"; exit 1; fi
+        echo "AI slop score $SCORE (limit $LIMIT)"

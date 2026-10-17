@@ -1,0 +1,43 @@
+{
+  "manifest_version": "0.3",
+  "name": "aislopmeter",
+  "display_name": "AI Slop Meter",
+  "version": "0.0.0",
+  "description": "Measure the AI slop on any website, local app or project folder, then fix it with step-by-step, site-specific instructions.",
+  "long_description": "AI Slop Meter scores a website, a localhost app or a project folder for AI slop: generic copy, the default AI-builder look and unfinished details. Every finding comes with steps, the exact file:line places and a done-when check. It crawls whole sites, writes a visual report and works in English and Turkish. Runs locally; nothing is uploaded.",
+  "author": { "name": "Ömer Göçmen", "url": "https://github.com/omergocmen" },
+  "homepage": "https://aislopmeter.netlify.app",
+  "repository": { "type": "git", "url": "https://github.com/omergocmen/aislopmeter" },
+  "documentation": "https://github.com/omergocmen/aislopmeter#readme",
+  "support": "https://github.com/omergocmen/aislopmeter/issues",
+  "icon": "icon.png",
+  "license": "MIT",
+  "keywords": ["ai slop", "website audit", "copywriting", "web design", "seo", "turkish"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.mjs", "mcp"],
+      "env": {}
+    }
+  },
+  "tools": [
+    { "name": "slop_scan", "description": "Scan a website, localhost app, project folder or .html file for AI slop" },
+    { "name": "slop_scan_html", "description": "Scan pasted or generated HTML" },
+    { "name": "slop_rescue_plan", "description": "Turn a scan into a phased, site-specific plan" },
+    { "name": "slop_fix", "description": "Step-by-step instructions for one finding" },
+    { "name": "slop_page", "description": "The report for one page of a site scan" },
+    { "name": "slop_compare", "description": "Before/after for two scans" },
+    { "name": "slop_report", "description": "Write or open the visual report" },
+    { "name": "slop_guide", "description": "Read the criteria and the rescue guides" }
+  ],
+  "prompts": [
+    { "name": "rescue", "description": "Scan, plan, fix and re-measure until the target score", "arguments": ["target", "target_score"], "text": "Rescue ${arguments.target} from AI slop with AI Slop Meter." },
+    { "name": "fix", "description": "Fix the single most important problem and show the difference", "arguments": ["target"], "text": "Fix the next AI slop problem in ${arguments.target}." }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "node": ">=20.0.0" }
+  }
+}

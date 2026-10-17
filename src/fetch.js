@@ -2,6 +2,7 @@
 // with the Chrome or Edge already installed on this machine (via playwright-core, optional).
 import { parseHTML } from 'linkedom';
 import { wordsOf } from './util.js';
+import { measureVisual } from './visual.js';
 
 const UA = 'Mozilla/5.0 (compatible; AISlopMeter/1.0; +https://github.com/omergocmen/aislopmeter)';
 const MAX_BYTES = 6 * 1024 * 1024;
@@ -62,6 +63,7 @@ export function looksLikeShell(html) {
 }
 
 async function launchBrowser() {
+  if (/^(?:off|0|false|never)$/i.test(process.env.AISLOPMETER_BROWSER || '')) return { browser: null, reason: 'browser turned off (AISLOPMETER_BROWSER=off)' };
   let pw;
   try {
     pw = await import('playwright-core');
@@ -79,12 +81,13 @@ async function launchBrowser() {
   return { browser: null, reason: 'no Chrome, Edge or Chromium found (set AISLOPMETER_CHROME to a browser path)', error: String(lastErr?.message || '').split('\n')[0] };
 }
 
-async function renderWith(browser, url, timeoutMs) {
-  const page = await browser.newPage({ userAgent: UA.replace('compatible; ', '') });
+async function renderWith(browser, url, timeoutMs, { visual = false } = {}) {
+  const page = await browser.newPage({ userAgent: UA.replace('compatible; ', ''), viewport: { width: 1366, height: 900 } });
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: timeoutMs }).catch(() => page.waitForTimeout(3000));
     await page.waitForTimeout(800);
-    return { html: await page.content(), reason: null };
+    const vis = visual ? await page.evaluate(measureVisual).catch(() => null) : null;
+    return { html: await page.content(), visual: vis, reason: null };
   } catch (e) {
     return { html: null, reason: 'render failed', error: String(e.message).split('\n')[0] };
   } finally {
@@ -103,7 +106,8 @@ export async function renderHtml(url, { timeoutMs = 30000 } = {}) {
 export async function openRenderer({ timeoutMs = 30000 } = {}) {
   const { browser, reason, error } = await launchBrowser();
   return {
-    render: (url) => (browser ? renderWith(browser, url, timeoutMs) : Promise.resolve({ html: null, reason, error })),
+    available: !!browser,
+    render: (url, opts) => (browser ? renderWith(browser, url, timeoutMs, opts) : Promise.resolve({ html: null, reason, error })),
     close: () => (browser ? browser.close().catch(() => {}) : Promise.resolve()),
   };
 }
@@ -158,20 +162,35 @@ export async function fetchAssets(html, pageUrl, cache = new Map()) {
 }
 
 /** Fetch, and render if the page is a shell. */
-export async function loadPage(input, { render = 'auto', assets = true, assetCache } = {}) {
+/**
+ * Fetch a page. With a local Chrome/Edge (render != 'never') it is also opened in the browser:
+ * to render an empty JavaScript shell, and to take the visual measurements (src/visual.js).
+ * Without a browser everything still works from the HTML and CSS alone.
+ */
+export async function loadPage(input, { render = 'auto', assets = true, assetCache, renderer = null, visual = true } = {}) {
   const url = normalizeUrl(input);
   const got = await fetchHtml(url);
   const notes = [];
   let html = got.html;
   let rendered = false;
+  let vis = null;
   const shell = looksLikeShell(html);
-  if (render === 'always' || (render === 'auto' && shell)) {
-    const r = await renderHtml(got.finalUrl);
-    if (r.html) { html = r.html; rendered = true; }
-    else notes.push({ code: 'render-unavailable', reason: r.reason, error: r.error });
+  const wantRender = render === 'always' || (render === 'auto' && shell);
+  const wantVisual = visual && render !== 'never';
+  if (wantRender || wantVisual) {
+    const own = !renderer;
+    const r = renderer || (await openRenderer());
+    try {
+      const out = await r.render(got.finalUrl, { visual: wantVisual });
+      if (out.html && wantRender) { html = out.html; rendered = true; }
+      if (out.visual) vis = out.visual;
+      if (!out.html && wantRender) notes.push({ code: 'render-unavailable', reason: out.reason, error: out.error });
+    } finally {
+      if (own) await r.close();
+    }
   }
   const files = assets ? await fetchAssets(html, got.finalUrl, assetCache) : [];
-  return { url: got.finalUrl, html, rendered, notes, assets: files, shell };
+  return { url: got.finalUrl, html, rendered, notes, assets: files, shell, visual: vis };
 }
 
 /** Same-origin links worth scanning next, most informative pages first. */

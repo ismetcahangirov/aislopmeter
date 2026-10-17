@@ -1,33 +1,47 @@
 {
   "name": "aislopmeter",
-  "version": "0.1.0",
-  "description": "Measure the AI slop on any website, then fix it. Scan a URL or a web project for generic copy, template design and unfinished details, then let your own AI rescue it. CLI + MCP server.",
-  "main": "src/index.js",
-  "scripts": {
-    "test": "node --test test/*.test.js",
-    "start": "node bin/aislopmeter.js mcp"
-  },
+  "version": "0.2.0",
+  "description": "Measure the AI slop on any website, then fix it. Scans a whole site, a local app or a project folder for generic copy, template design and unfinished details, and gives step-by-step fixes your own AI can apply. MCP server + CLI.",
+  "mcpName": "io.github.omergocmen/aislopmeter",
   "keywords": [
     "ai-slop",
-    "slop",
+    "ai-slop-detector",
+    "bolt",
+    "claude",
+    "claude-code",
+    "copywriting",
+    "cursor",
+    "landing-page",
+    "lint",
+    "lovable",
     "mcp",
     "mcp-server",
     "model-context-protocol",
-    "vibe-coding",
-    "copywriting",
-    "web-design",
     "seo",
-    "lint",
-    "claude",
-    "cursor"
+    "shadcn",
+    "slop",
+    "tailwind",
+    "turkish",
+    "v0",
+    "vibe-coding",
+    "web-design",
+    "website-audit"
   ],
+  "homepage": "https://aislopmeter.netlify.app",
+  "bugs": {
+    "url": "https://github.com/omergocmen/aislopmeter/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omergocmen/aislopmeter.git"
+  },
   "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "linkedom": "^0.18.13",
-    "zod": "^4.6.7"
+  "author": {
+    "name": "Ömer Göçmen",
+    "url": "https://github.com/omergocmen"
   },
   "type": "module",
+  "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"
   },
@@ -37,24 +51,35 @@
   "files": [
     "bin",
     "src",
+    "dist/aislopmeter.browser.js",
     "docs/CRITERIA.md",
     "playbook",
     "README.md",
     "README.tr.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node bin/aislopmeter.js mcp",
+    "build": "node scripts/build.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "linkedom": "^0.18.13",
+    "zod": "^4.6.7"
   },
   "optionalDependencies": {
     "playwright-core": "^1.60.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/omergocmen/aislopmeter.git"
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   },
-  "homepage": "https://github.com/omergocmen/aislopmeter#readme",
-  "bugs": {
-    "url": "https://github.com/omergocmen/aislopmeter/issues"
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -21,7 +21,7 @@
 /* A measuring instrument, not a marketing page: mineral-glass paper, slate ink,
    a fuchsin stain for slop and a chlorophyll green for "clean". One moving part: the needle. */
 :root{
-  --paper:#e9eeec; --sheet:#f7faf9; --ink:#14232b; --ink-2:#3b4d55; --muted:#5d6f76; --rule:#c9d5d2;
+  --paper:#e9eeec; --sheet:#f7faf9; --ink:#14232b; --ink-2:#3b4d55; --muted:#55666d; --rule:#c9d5d2;
   --stain:#ad2357; --clean:#2a7653; --blue:#1f4e8c;
   --display:'Familjen Grotesk','Helvetica Neue',Arial,sans-serif;
   --text:'Source Serif 4',Georgia,serif;
@@ -129,6 +129,12 @@ section{padding-block:72px;border-top:1px solid var(--rule)}
 pre{margin:0;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;font-size:13.5px;line-height:1.55;overflow-x:auto}
 .ask{font-size:20px;line-height:1.5;border-left:3px solid var(--clean);padding:4px 0 4px 18px;margin:8px 0 0;max-width:34em}
 
+.oneclick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 34px}
+.ob{display:block;border:1.5px solid var(--ink);border-radius:10px;padding:14px 16px;text-decoration:none;color:var(--ink);background:var(--sheet)}
+.ob b{display:block;font:700 18px/1.2 var(--display)}
+.ob span{display:block;font-size:15px;color:var(--muted);margin-top:3px}
+.ob:hover{background:var(--paper)}
+.bm{display:inline-block;font:600 15px var(--display);border:1.5px dashed var(--ink);border-radius:8px;padding:4px 10px;text-decoration:none;color:var(--ink);cursor:grab}
 /* limits */
 .limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px}
 .limits h3{font-size:20px;margin-bottom:8px}
@@ -138,7 +144,8 @@ footer{border-top:1px solid var(--rule);padding-block:30px 48px;font-size:15.5px
 footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
 
 @media (max-width:900px){
-  .hero,.sec-head,.steps>li,.install,.limits{grid-template-columns:minmax(0,1fr);gap:28px}
+  .hero,.sec-head,.steps>li,.install,.limits,.oneclick{grid-template-columns:minmax(0,1fr);gap:28px}
+  .oneclick{gap:10px}
   .hero{padding-block:24px 56px}
   .areas li{grid-template-columns:1fr auto;gap:6px 16px}
   .areas li p{grid-column:1/-1}
@@ -178,11 +185,11 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
     <p class="lede" lang="en">AI Slop Meter reads every page, scores it from 0 to 100 and tells you what to change, down to the file and line. Then your own AI makes the changes.</p>
     <p class="lede" lang="tr">AI Slop Meter sitenin her sayfasını okur, 0'dan 100'e puanlar ve neyi değiştirmen gerektiğini dosya ve satırına kadar söyler. Değişiklikleri de kendi yapay zekân yapar.</p>
     <div class="cmd">
-      <code id="cmd-main">claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp</code>
+      <code id="cmd-main">claude mcp add --scope user aislopmeter -- npx -y aislopmeter mcp</code>
       <button type="button" data-copy="cmd-main"><span lang="en">Copy</span><span lang="tr">Kopyala</span></button>
     </div>
-    <p class="cmd-note" lang="en">That line is for Claude Code. Cursor, Claude Desktop and the rest are <a href="#install">below</a>. To try it once without installing: <code>npx -y github:omergocmen/aislopmeter https://your-site.com --open</code></p>
-    <p class="cmd-note" lang="tr">Bu satır Claude Code için. Cursor, Claude Desktop ve diğerleri <a href="#install">aşağıda</a>. Kurmadan bir kez denemek için: <code>npx -y github:omergocmen/aislopmeter https://siten.com --open --lang tr</code></p>
+    <p class="cmd-note" lang="en">That line is for Claude Code and installs it once for all your projects. Cursor, Claude Desktop and the rest are <a href="#install">below</a>. To try it once without installing: <code>npx -y aislopmeter https://your-site.com --open</code></p>
+    <p class="cmd-note" lang="tr">Bu satır Claude Code için, bir kez kurar ve bütün projelerinde çalışır. Cursor, Claude Desktop ve diğerleri <a href="#install">aşağıda</a>. Kurmadan bir kez denemek için: <code>npx -y aislopmeter https://siten.com --open --lang tr</code></p>
   </div>
 
   <figure class="meter" style="margin:0">
@@ -317,21 +324,28 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
 <section class="wrap" id="install" aria-labelledby="install-h">
   <div class="sec-head">
     <h2 id="install-h"><span lang="en">Install</span><span lang="tr">Kurulum</span></h2>
-    <p lang="en">You need <a href="https://nodejs.org">Node.js</a> 20 or newer. No account and no API key: it runs on your computer and uses the AI you already have.</p>
-    <p lang="tr"><a href="https://nodejs.org">Node.js</a> 20 ya da üstü gerekir. Hesap ya da API anahtarı yok: senin bilgisayarında çalışır ve zaten kullandığın yapay zekâyı kullanır.</p>
+    <p lang="en">Pick your tool. Apart from the Claude Desktop extension you need <a href="https://nodejs.org">Node.js</a> 20 or newer. No account and no API key: it runs on your computer and uses the AI you already have.</p>
+    <p lang="tr">Aracını seç. Claude Desktop eklentisi dışında <a href="https://nodejs.org">Node.js</a> 20 ya da üstü gerekir. Hesap ya da API anahtarı yok: senin bilgisayarında çalışır ve zaten kullandığın yapay zekâyı kullanır.</p>
+  </div>
+  <div class="oneclick">
+    <a class="ob" href="https://cursor.com/install-mcp?name=aislopmeter&amp;config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImFpc2xvcG1ldGVyIiwibWNwIl19"><b>Cursor</b><span lang="en">Add in one click</span><span lang="tr">Tek tıkla ekle</span></a>
+    <a class="ob" href="https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%7B%22name%22%3A%22aislopmeter%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22aislopmeter%22%2C%22mcp%22%5D%7D"><b>VS Code</b><span lang="en">Add in one click</span><span lang="tr">Tek tıkla ekle</span></a>
+    <a class="ob" href="https://github.com/omergocmen/aislopmeter/releases/latest/download/aislopmeter.mcpb"><b>Claude Desktop</b><span lang="en">Download, double-click. No Node.js needed</span><span lang="tr">İndir, çift tıkla. Node.js gerekmez</span></a>
   </div>
   <div class="install">
     <div>
       <h3>Claude Code</h3>
-      <pre><code>claude mcp add aislopmeter -- npx -y github:omergocmen/aislopmeter mcp</code></pre>
+      <pre><code>claude mcp add --scope user aislopmeter -- npx -y aislopmeter mcp</code></pre>
+      <p lang="en">Or as a plugin, with a rescue skill: <code>/plugin marketplace add omergocmen/aislopmeter</code> then <code>/plugin install aislopmeter@aislopmeter</code></p>
+      <p lang="tr">Ya da kurtarma becerisiyle birlikte plugin olarak: <code>/plugin marketplace add omergocmen/aislopmeter</code>, sonra <code>/plugin install aislopmeter@aislopmeter</code></p>
       <h3 style="margin-top:26px">Claude Desktop, Cursor, Gemini CLI, Windsurf</h3>
-      <p lang="en">Add this to the tool's MCP settings file (for Cursor: <code>.cursor/mcp.json</code>).</p>
-      <p lang="tr">Aracın MCP ayar dosyasına ekle (Cursor için: <code>.cursor/mcp.json</code>).</p>
+      <p lang="en">Add this to the tool's MCP settings file. For Cursor, <code>~/.cursor/mcp.json</code> makes it work in every project.</p>
+      <p lang="tr">Aracın MCP ayar dosyasına ekle. Cursor için <code>~/.cursor/mcp.json</code> dosyası her projede çalışmasını sağlar.</p>
       <pre><code>{
   "mcpServers": {
     "aislopmeter": {
       "command": "npx",
-      "args": ["-y", "github:omergocmen/aislopmeter", "mcp"]
+      "args": ["-y", "aislopmeter", "mcp"]
     }
   }
 }</code></pre>
@@ -342,10 +356,18 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
       <p class="ask" lang="tr">https://sitem.com adresini AI slop açısından tara ve neyi düzeltmem gerektiğini göster. Bitince raporu aç.</p>
       <p style="margin-top:18px" lang="en">Or run the built-in prompts: <code>rescue</code> takes the whole site to a target score, <code>fix</code> fixes only the most important problem and shows the difference.</p>
       <p style="margin-top:18px" lang="tr">Ya da hazır komutları kullan: <code>rescue</code> bütün siteyi hedef skora indirir, <code>fix</code> sadece en önemli sorunu düzeltip farkı gösterir.</p>
+      <h3 style="margin-top:26px"><span lang="en">In the browser, no install</span><span lang="tr">Tarayıcıda, kurulumsuz</span></h3>
+      <p lang="en">Drag this to your bookmarks bar, then click it on any page: <a class="bm" href="javascript:(()=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/aislopmeter@0/dist/aislopmeter.browser.js';s.onload=()=>AISlopMeter.overlay();document.head.appendChild(s)})()">AI Slop Meter</a></p>
+      <p lang="tr">Bunu yer imleri çubuğuna sürükle, sonra herhangi bir sayfada tıkla: <a class="bm" href="javascript:(()=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/aislopmeter@0/dist/aislopmeter.browser.js';s.onload=()=>AISlopMeter.overlay();document.head.appendChild(s)})()">AI Slop Meter</a></p>
       <h3 style="margin-top:26px"><span lang="en">Command line and CI</span><span lang="tr">Komut satırı ve CI</span></h3>
-      <pre><code>npx -y github:omergocmen/aislopmeter https://site.com --open
-npx -y github:omergocmen/aislopmeter ./my-app --plan --lang tr
-npx -y github:omergocmen/aislopmeter ./dist --fail-above 40</code></pre>
+      <pre><code>npx -y aislopmeter https://site.com --open
+npx -y aislopmeter ./my-app --plan --lang tr
+npx -y aislopmeter ./dist --fail-above 40</code></pre>
+      <h3 style="margin-top:26px"><span lang="en">Apps that are not online yet</span><span lang="tr">Henüz yayında olmayan uygulamalar</span></h3>
+      <p lang="en">It runs on your computer, so it reaches <code>localhost</code>. Scan the dev server for what you see, and the project folder for file and line.</p>
+      <p lang="tr">Senin bilgisayarında çalıştığı için <code>localhost</code>'a ulaşır. Gördüğün hali için geliştirme sunucusunu, dosya ve satır için proje klasörünü tara.</p>
+      <pre><code>npx -y aislopmeter localhost:3000 --open
+npx -y aislopmeter . --plan</code></pre>
     </div>
   </div>
 </section>

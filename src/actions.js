@@ -313,6 +313,10 @@ const A = {
     steps: [t('Remove the ::after bar under section titles.', 'Bölüm başlıklarının altındaki ::after çizgisini kaldırın.'), t('Separate sections with spacing and type size instead.', 'Bölümleri bunun yerine boşluk ve yazı boyutuyla ayırın.')],
     done: t('Headings stand on their own.', 'Başlıklar kendi başına duruyor.'),
   },
+  'centred-everything': {
+    steps: [t('Left-align paragraphs and section headings.', 'Paragrafları ve bölüm başlıklarını sola hizalayın.'), t('Keep centred text only where it marks a single moment, such as the hero.', 'Ortalanmış metni sadece tek bir anı işaret ettiği yerde bırakın, örneğin hero.')],
+    done: t('The eye can follow one left edge down the page.', 'Göz sayfa boyunca tek bir sol kenarı izleyebiliyor.'),
+  },
   'stock-icons': {
     steps: [t('Remove icons that only decorate a heading.', 'Sadece başlığı süsleyen ikonları kaldırın.'), t('Keep icons where they help scanning, and draw or pick ones that show this product.', 'Taramaya yardım ettiği yerlerde ikon bırakın; bu ürünü gösteren ikonlar çizin ya da seçin.')],
     done: t('No ✨ Sparkles icon and no icon that could sit on any other site.', '✨ Sparkles ikonu ve başka herhangi bir sitede durabilecek ikon yok.'),
