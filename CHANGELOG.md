@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 (2026-10-17)
+
+- **`thin-page` on gated landing pages.** A "Log in" button in the menu no longer makes a page count as a sign-in page; only the main heading and password fields do.
+- **Calibration re-measured with 0.2.1.** AI-built pages: median 25 (was 33). Hand-made pages: median about 12 (was 16), none above 20. See docs/CALIBRATION.md.
+- **Usage guide** in English and Turkish (`docs/USAGE.md`, `docs/KULLANIM.md`): the order to work in, every command and MCP tool with examples, recipes and troubleshooting. A quick start at the top of both READMEs.
+- **Website.** The NovaFlow before/after is a browser window with Before, After and Compare tabs and a line you drag. A new section plots all calibration scores. The page now names who makes it and how to reach him, and scores 3.
+
 ## 0.2.1 (2026-10-17)
 
 Calibration on 34 real sites (22 built with AI tools such as Lovable and Bolt, 12 hand-made; see docs/CALIBRATION.md). Fewer false alarms, one new check.

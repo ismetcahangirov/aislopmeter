@@ -1,6 +1,6 @@
 {
   "name": "aislopmeter",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Measure the AI slop on any website, then fix it. Scans a whole site, a local app or a project folder for generic copy, template design and unfinished details, and gives step-by-step fixes your own AI can apply. MCP server + CLI.",
   "mcpName": "io.github.omergocmen/aislopmeter",
   "keywords": [
@@ -53,6 +53,8 @@
     "src",
     "dist/aislopmeter.browser.js",
     "docs/CRITERIA.md",
+    "docs/KULLANIM.md",
+    "docs/USAGE.md",
     "playbook",
     "README.md",
     "README.tr.md",

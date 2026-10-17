@@ -86,11 +86,51 @@ section{padding-block:72px;border-top:1px solid var(--rule)}
 .sec-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:48px;align-items:end;margin-bottom:34px}
 .sec-head h2{font-size:clamp(32px,4vw,48px)}
 .sec-head p{color:var(--ink-2);margin:0;max-width:36em}
-.specimen{position:relative;border:1px solid var(--rule);border-radius:12px;overflow:hidden;background:var(--sheet)}
-.specimen img{width:100%;aspect-ratio:1280/860;object-fit:cover;object-position:top}
-.specimen .after-img{position:absolute;inset:0;opacity:0;transition:opacity .35s}
-.specimen[data-state=after] .after-img{opacity:1}
+/* the specimen sits in a browser window: tabs for before / after, and a split view to drag */
+.win{margin:0;border:1.5px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--sheet);box-shadow:0 18px 40px -28px rgba(20,35,43,.55)}
+.win-bar{display:flex;align-items:flex-end;gap:14px;padding:10px 12px 0;background:var(--paper);border-bottom:1.5px solid var(--ink)}
+.dots{display:flex;gap:7px;padding:0 4px 13px;flex:none}
+.dots i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--ink-2)}
+.tabs{display:flex;gap:4px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.tab{display:flex;align-items:center;gap:10px;font:600 14px/1 var(--display);color:var(--ink-2);background:transparent;border:1.5px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;padding:10px 14px 11px;cursor:pointer;white-space:nowrap;margin-bottom:-1.5px}
+.tab b{font-variant-numeric:tabular-nums;font-size:13px;padding:3px 7px;border-radius:5px;color:#fff}
+.tab .s83{background:var(--stain)} .tab .s1{background:var(--clean)}
+.tab[aria-selected=true]{background:var(--sheet);color:var(--ink);border-color:var(--ink)}
+.tab:not([aria-selected=true]):hover{color:var(--ink);background:var(--rule)}
+.win-url{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--rule);font:13px var(--code);color:var(--muted)}
+.win-url span{flex:1;min-width:0;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:5px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.win-url em{font-style:normal;color:var(--ink)}
+.view{position:relative;aspect-ratio:1280/860;overflow:hidden;background:var(--sheet);--x:50%}
+.view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.view .after-img{clip-path:inset(0 0 0 var(--x))}
+.win[data-state=before] .after-img{clip-path:inset(0 0 0 100%)}
+.win[data-state=after] .after-img{clip-path:inset(0 0 0 0)}
+.win:not([data-state=split]) .view{--x:0%}
+.view .tag{position:absolute;bottom:14px;font:700 13px/1 var(--display);color:#fff;padding:7px 10px;border-radius:6px;pointer-events:none;transition:opacity .2s}
+.view .tag.b{left:14px;background:var(--stain)} .view .tag.a{right:14px;background:var(--clean)}
+.win:not([data-state=split]) .tag{opacity:0}
+.split-line{position:absolute;top:0;bottom:0;left:var(--x);width:0;border-left:2px solid #fff;box-shadow:0 0 0 1px rgba(20,35,43,.5);pointer-events:none}
+.split-line::after{content:'';position:absolute;top:50%;left:-19px;width:36px;height:36px;margin-top:-18px;border-radius:50%;background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Cpath d='M15 12l-6 6 6 6M21 12l6 6-6 6' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;border:2px solid #fff}
+.win:not([data-state=split]) .split-line{display:none}
+.view input[type=range]{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize;-webkit-appearance:none;appearance:none}
+.win:not([data-state=split]) .view input{display:none}
+.view input:focus-visible+.split-line{border-left-color:var(--blue)}
 .specimen-note{font-size:15px;color:var(--muted);margin-top:12px}
+
+/* calibration: every site as a dot on the 0–100 scale */
+.strip{margin:8px 0 0;padding:0;list-style:none}
+.strip li{display:grid;grid-template-columns:170px minmax(0,1fr);gap:20px;align-items:center;padding:16px 0;border-top:1px solid var(--rule)}
+.strip li:last-child{border-bottom:1px solid var(--rule)}
+.strip h3{font-size:17px;line-height:1.25}
+.strip h3 small{display:block;font:500 14px var(--display);color:var(--muted);margin-top:3px}
+.track{position:relative;height:34px;border-radius:6px;background:linear-gradient(90deg,rgba(42,118,83,.13) 0 20%,rgba(196,138,30,.12) 20% 60%,rgba(173,35,87,.12) 60%)}
+.track i{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;background:var(--sheet);border:2px solid var(--ink)}
+.track.ai i{background:var(--ink)}
+.track .med{position:absolute;top:-6px;bottom:-6px;width:0;border-left:2.5px solid var(--stain)}
+.track .med span{position:absolute;bottom:100%;left:-30px;width:60px;text-align:center;font:600 12.5px var(--display);color:var(--stain);margin-bottom:2px}
+.axis{display:grid;grid-template-columns:170px minmax(0,1fr);gap:20px;font:500 12.5px var(--display);color:var(--muted);margin-top:8px}
+.axis div{position:relative;height:16px}
+.axis div span{position:absolute;transform:translateX(-50%)}
 
 /* what it measures: the 100 points */
 .points{display:flex;height:22px;border-radius:5px;overflow:hidden;margin:0 0 6px}
@@ -150,7 +190,10 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
   .areas li{grid-template-columns:1fr auto;gap:6px 16px}
   .areas li p{grid-column:1/-1}
   .top nav a.hide-s{display:none}
+  .strip li,.axis{grid-template-columns:minmax(0,1fr);gap:10px}
+  .axis>span{display:none}
 }
+@media (max-width:520px){.dots{display:none}.tab{padding:9px 10px 10px;font-size:13px}.view .tag{bottom:8px;font-size:12px}}
 @media (max-width:520px){
   body{font-size:17px}
   .lede{font-size:19px}
@@ -158,7 +201,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
   .cmd button{border-left:0;border-top:1.5px solid var(--ink);border-radius:0 0 6px 6px;padding:11px}
   section{padding-block:56px}
 }
-@media (prefers-reduced-motion:reduce){.needle,.specimen .after-img{transition:none}}
+@media (prefers-reduced-motion:reduce){.needle,.view .tag{transition:none}}
 </style>
 </head>
 <body>
@@ -188,8 +231,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
       <code id="cmd-main">claude mcp add --scope user aislopmeter -- npx -y aislopmeter mcp</code>
       <button type="button" data-copy="cmd-main"><span lang="en">Copy</span><span lang="tr">Kopyala</span></button>
     </div>
-    <p class="cmd-note" lang="en">That line is for Claude Code and installs it once for all your projects. Cursor, Claude Desktop and the rest are <a href="#install">below</a>. To try it once without installing: <code>npx -y aislopmeter https://your-site.com --open</code></p>
-    <p class="cmd-note" lang="tr">Bu satır Claude Code için, bir kez kurar ve bütün projelerinde çalışır. Cursor, Claude Desktop ve diğerleri <a href="#install">aşağıda</a>. Kurmadan bir kez denemek için: <code>npx -y aislopmeter https://siten.com --open --lang tr</code></p>
+    <p class="cmd-note" lang="en">That line is for Claude Code and installs it once for all your projects; other tools are under <a href="#install">Install</a>. To try it once without installing: <code>npx -y aislopmeter https://your-site.com --open</code></p>
+    <p class="cmd-note" lang="tr">Bu satır Claude Code için; bir kez kurar, bütün projelerinde çalışır. Diğer araçlar <a href="#install">Kurulum</a> bölümünde. Kurmadan bir kez denemek için: <code>npx -y aislopmeter https://siten.com --open --lang tr</code></p>
   </div>
 
   <figure class="meter" style="margin:0">
@@ -206,20 +249,35 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
       <button type="button" class="before" data-state="before" aria-pressed="true"><span lang="en">Before</span><span lang="tr">Önce</span> <b>83</b></button>
       <button type="button" class="after" data-state="after" aria-pressed="false"><span lang="en">After</span><span lang="tr">Sonra</span> <b>1</b></button>
     </div>
-    <figcaption lang="en">The NovaFlow demo page, scored before and after a rescue. Green is clean, red is heavy slop.</figcaption>
-    <figcaption lang="tr">NovaFlow örnek sayfasının kurtarmadan önceki ve sonraki skoru. Yeşil temiz, kırmızı yoğun slop.</figcaption>
+    <figcaption lang="en">The NovaFlow demo page: 83 before the rescue, 1 after. Green is clean, red is heavy slop.</figcaption>
+    <figcaption lang="tr">NovaFlow örnek sayfası: kurtarmadan önce 83, sonra 1. Yeşil temiz, kırmızı yoğun slop.</figcaption>
   </figure>
 </div>
 
 <section class="wrap" aria-labelledby="specimen-h">
   <div class="sec-head">
     <h2 id="specimen-h"><span lang="en">Same product, same facts</span><span lang="tr">Aynı ürün, aynı bilgiler</span></h2>
-    <p lang="en">Before: a page a site builder produced from one prompt. Purple gradient, emoji icons, three identical cards, "seamless" and "cutting-edge". Switch to after: the owner answered the plan's questions, and the page was rewritten with those answers.</p>
-    <p lang="tr">Önce: bir site aracının tek prompt'la ürettiği sayfa. Mor gradyan, emoji ikonlar, birbirinin aynı üç kart, "sorunsuz" ve "son teknoloji". Sonra: sahibi planın sorularını cevapladı, sayfa bu cevaplarla yeniden yazıldı.</p>
+    <p lang="en">Before: a page a site builder produced from one prompt. Purple gradient, emoji icons, three identical cards, "seamless" and "cutting-edge". After: the owner answered the plan's questions, and the page was rewritten with those answers. Drag the line to compare.</p>
+    <p lang="tr">Önce: bir site aracının tek prompt'la ürettiği sayfa. Mor gradyan, emoji ikonlar, birbirinin aynı üç kart, "sorunsuz" ve "son teknoloji". Sonra: sahibi planın sorularını cevapladı, sayfa bu cevaplarla yeniden yazıldı. Karşılaştırmak için çizgiyi sürükle.</p>
   </div>
-  <figure class="specimen" id="specimen" data-state="before" style="margin:0">
-    <img src="img/before.png" width="1280" height="860" alt="The demo page before: purple gradient hero, emoji feature icons and generic claims.">
-    <img class="after-img" src="img/after.png" width="1280" height="860" alt="The demo page after: an invoice on the page, plain type, specific prices and named people." loading="lazy">
+  <figure class="win" id="specimen" data-state="split">
+    <div class="win-bar">
+      <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <div class="tabs" role="tablist" aria-label="NovaFlow">
+        <button type="button" class="tab" role="tab" data-view="before" aria-selected="false"><span lang="en">Before</span><span lang="tr">Önce</span> <b class="s83">83</b></button>
+        <button type="button" class="tab" role="tab" data-view="after" aria-selected="false"><span lang="en">After</span><span lang="tr">Sonra</span> <b class="s1">1</b></button>
+        <button type="button" class="tab" role="tab" data-view="split" aria-selected="true"><span lang="en">Compare</span><span lang="tr">Karşılaştır</span></button>
+      </div>
+    </div>
+    <div class="win-url" aria-hidden="true"><span id="win-url">examples/novaflow/<em>before.html</em> ↔ <em>after.html</em></span></div>
+    <div class="view" id="view">
+      <img src="img/before.png" width="1280" height="860" alt="The demo page before: purple gradient hero, emoji feature icons and generic claims.">
+      <img class="after-img" src="img/after.png" width="1280" height="860" alt="The demo page after: an invoice on the page, plain type, specific prices and named people." loading="lazy">
+      <span class="tag b"><span lang="en">Before</span><span lang="tr">Önce</span> · 83</span>
+      <span class="tag a"><span lang="en">After</span><span lang="tr">Sonra</span> · 1</span>
+      <input type="range" id="split" min="0" max="100" value="50" aria-label="Before / after">
+      <span class="split-line" aria-hidden="true"></span>
+    </div>
   </figure>
   <p class="specimen-note" lang="en">NovaFlow is a made-up product and its figures are fictional. Both pages are in the repo under <code>examples/novaflow</code>, so you can scan them yourself.</p>
   <p class="specimen-note" lang="tr">NovaFlow uydurma bir ürün, rakamları da kurgu. İki sayfa da repoda <code>examples/novaflow</code> altında, kendin tarayabilirsin.</p>
@@ -324,8 +382,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
 <section class="wrap" id="install" aria-labelledby="install-h">
   <div class="sec-head">
     <h2 id="install-h"><span lang="en">Install</span><span lang="tr">Kurulum</span></h2>
-    <p lang="en">Pick your tool. Apart from the Claude Desktop extension you need <a href="https://nodejs.org">Node.js</a> 20 or newer. No account and no API key: it runs on your computer and uses the AI you already have.</p>
-    <p lang="tr">Aracını seç. Claude Desktop eklentisi dışında <a href="https://nodejs.org">Node.js</a> 20 ya da üstü gerekir. Hesap ya da API anahtarı yok: senin bilgisayarında çalışır ve zaten kullandığın yapay zekâyı kullanır.</p>
+    <p lang="en">Pick your tool. Apart from the Claude Desktop extension you need <a href="https://nodejs.org">Node.js</a> 20 or newer. No account and no API key: it runs on your computer and uses the AI you already have. Every command, in order, with examples: the <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/USAGE.md">usage guide</a>.</p>
+    <p lang="tr">Aracını seç. Claude Desktop eklentisi dışında <a href="https://nodejs.org">Node.js</a> 20 ya da üstü gerekir. Hesap ya da API anahtarı yok: senin bilgisayarında çalışır ve zaten kullandığın yapay zekâyı kullanır. Bütün komutlar sırasıyla ve örnekleriyle: <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/KULLANIM.md">kullanım kılavuzu</a>.</p>
   </div>
   <div class="oneclick">
     <a class="ob" href="https://cursor.com/install-mcp?name=aislopmeter&amp;config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImFpc2xvcG1ldGVyIiwibWNwIl19"><b>Cursor</b><span lang="en">Add in one click</span><span lang="tr">Tek tıkla ekle</span></a>
@@ -372,6 +430,27 @@ npx -y aislopmeter . --plan</code></pre>
   </div>
 </section>
 
+<section class="wrap" id="tested" aria-labelledby="tested-h">
+  <div class="sec-head">
+    <h2 id="tested-h"><span lang="en">Tested on 33 real sites</span><span lang="tr">33 gerçek sitede denendi</span></h2>
+    <p lang="en">On 17 October 2026, 21 home pages built with Lovable, Bolt and similar tools were scanned next to 12 hand-made ones, from jvns.ca and paulgraham.com to webrazzi.com. Every finding on a hand-made site was checked by hand; the wrong ones were fixed in 0.2.1 and each has a test.</p>
+    <p lang="tr">17 Ekim 2026'da Lovable, Bolt ve benzeri araçlarla yapılmış 21 ana sayfa, jvns.ca ve paulgraham.com'dan webrazzi.com'a elle yapılmış 12 siteyle birlikte tarandı. Elle yapılmış sitelerdeki her bulgu tek tek kontrol edildi; yanlış olanlar 0.2.1'de düzeltildi ve her biri için test var.</p>
+  </div>
+  <ul class="strip">
+    <li>
+      <h3><span lang="en">Built with AI tools</span><span lang="tr">AI araçlarıyla yapılmış</span><small lang="en">21 sites, median 27</small><small lang="tr">21 site, medyan 27</small></h3>
+      <div class="track ai" role="img" aria-label="Scores from 9 to 46, median 27"><i style="left:41%"></i><i style="left:35%"></i><i style="left:46%"></i><i style="left:34%"></i><i style="left:35%;margin-top:-14.5px"></i><i style="left:35%;margin-top:1.5px"></i><i style="left:32%"></i><i style="left:27%"></i><i style="left:27%;margin-top:-14.5px"></i><i style="left:33%"></i><i style="left:27%;margin-top:1.5px"></i><i style="left:23%"></i><i style="left:22%"></i><i style="left:17%"></i><i style="left:18%"></i><i style="left:22%;margin-top:-14.5px"></i><i style="left:16%"></i><i style="left:18%;margin-top:-14.5px"></i><i style="left:10%"></i><i style="left:10%;margin-top:-14.5px"></i><i style="left:9%"></i><span class="med" style="left:27%"><span lang="en">median</span><span lang="tr">medyan</span></span></div>
+    </li>
+    <li>
+      <h3><span lang="en">Hand-made</span><span lang="tr">Elle yapılmış</span><small lang="en">12 sites, median 11.5</small><small lang="tr">12 site, medyan 11,5</small></h3>
+      <div class="track" role="img" aria-label="Scores from 2 to 20, median 11.5"><i style="left:20%"></i><i style="left:15%"></i><i style="left:15%;margin-top:-14.5px"></i><i style="left:15%;margin-top:1.5px"></i><i style="left:3%"></i><i style="left:13%"></i><i style="left:12%"></i><i style="left:11%"></i><i style="left:9%"></i><i style="left:9%;margin-top:-14.5px"></i><i style="left:7%"></i><i style="left:2%"></i><span class="med" style="left:11.5%"><span lang="en">median</span><span lang="tr">medyan</span></span></div>
+    </li>
+  </ul>
+  <div class="axis" aria-hidden="true"><span></span><div><span style="left:0%">0</span> <span style="left:20%">20</span> <span style="left:40%">40</span> <span style="left:60%">60</span> <span style="left:80%">80</span> <span style="left:100%">100</span></div></div>
+  <p class="fine" lang="en">No hand-made site reached 20. Small AI-built tools with little copy, like a Sudoku game, score as low as hand-made pages, because the score is about what a reader sees, not who built it. Sites, scores and method: <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/CALIBRATION.md">docs/CALIBRATION.md</a>.</p>
+  <p class="fine" lang="tr">Elle yapılmış hiçbir site 20'ye ulaşmadı. Az metinli küçük AI araçları (örneğin bir Sudoku oyunu) elle yapılmış sayfalar kadar düşük puan alıyor; çünkü skor kimin yaptığını değil, okuyanın ne gördüğünü ölçüyor. Siteler, puanlar ve yöntem: <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/CALIBRATION.md">docs/CALIBRATION.md</a>.</p>
+</section>
+
 <section class="wrap" aria-labelledby="limits-h">
   <div class="sec-head">
     <h2 id="limits-h"><span lang="en">What it is not</span><span lang="tr">Ne değildir</span></h2>
@@ -400,9 +479,10 @@ npx -y aislopmeter . --plan</code></pre>
 
 <footer>
   <div class="wrap">
-    <span lang="en">Open source under the MIT license. Made by Ömer Göçmen. This page scores 7 (clean) on its own meter.</span>
-    <span lang="tr">MIT lisanslı açık kaynak. Ömer Göçmen yaptı. Bu sayfa kendi ölçerinde 7 alıyor (temiz).</span>
-    <span><a href="https://github.com/omergocmen/aislopmeter">github.com/omergocmen/aislopmeter</a></span>
+    <span lang="en">Made by <a href="https://omergocmen.netlify.app">Ömer Göçmen</a> (<a href="https://github.com/omergocmen">@omergocmen</a>). Free and open source, MIT license. Version 0.2.2, updated 17 October 2026. This page scores 3 (clean) on its own meter.</span>
+    <span lang="tr"><a href="https://omergocmen.netlify.app">Ömer Göçmen</a> (<a href="https://github.com/omergocmen">@omergocmen</a>) yaptı. Ücretsiz ve açık kaynak, MIT lisansı. Sürüm 0.2.2, 17 Ekim 2026'da güncellendi. Bu sayfa kendi ölçerinde 3 alıyor (temiz).</span>
+    <span lang="en">A wrong score or a question? <a href="https://github.com/omergocmen/aislopmeter/issues">Open an issue</a>, it reaches me directly.</span>
+    <span lang="tr">Yanlış bir skor ya da soru mu var? <a href="https://github.com/omergocmen/aislopmeter/issues">Issue aç</a>, doğrudan bana gelir.</span>
   </div>
 </footer>
 
@@ -466,12 +546,29 @@ npx -y aislopmeter . --plan</code></pre>
     raf = requestAnimationFrame(step);
   }
   const buttons = document.querySelectorAll('.switch button');
+  const tabs = document.querySelectorAll('.tab');
+  const url = document.getElementById('win-url');
+  const view = document.getElementById('view');
+  const split = document.getElementById('split');
+  const URLS = { before: 'examples/novaflow/<em>before.html</em>', after: 'examples/novaflow/<em>after.html</em>', split: 'examples/novaflow/<em>before.html</em> ↔ <em>after.html</em>' };
+  function show(v) {
+    specimen.dataset.state = v;
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.view === v)));
+    url.innerHTML = URLS[v];
+  }
   function state(s) {
     buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === s)));
-    specimen.dataset.state = s;
     point(s === 'after' ? 1 : 83);
   }
-  buttons.forEach((b) => b.addEventListener('click', () => state(b.dataset.state)));
+  buttons.forEach((b) => b.addEventListener('click', () => { state(b.dataset.state); show(b.dataset.state); }));
+  tabs.forEach((t) => t.addEventListener('click', () => { show(t.dataset.view); if (t.dataset.view !== 'split') state(t.dataset.view); }));
+  // the split line: drag anywhere on the picture, or use the arrow keys; the meter follows the side you are looking at
+  split.addEventListener('input', () => {
+    view.style.setProperty('--x', split.value + '%');
+    const s = split.value < 50 ? 'after' : 'before';
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === s)));
+  });
+  split.addEventListener('change', () => point(split.value < 50 ? 1 : 83));
   // the one moving moment: the needle swings up to the "before" reading once the page is shown
   requestAnimationFrame(() => setTimeout(() => point(83), reduce ? 0 : 250));
 

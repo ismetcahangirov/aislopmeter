@@ -158,8 +158,10 @@ const content = [
     const heads = ctx.C.headings.length;
     const ctas = ctx.C.buttons.filter((b) => b.text && wordsOf(b.text).length <= 5).length;
     if (heads < 2 || ctas < 1) return null;
-    // sign-in, checkout and error pages are short on purpose
-    if (/password|şifre|parola|sign in|log in|giriş yap|404|not found|bulunamadı|checkout|ödeme/i.test(ctx.text)) return null;
+    // sign-in, checkout and error pages are short on purpose (a "Log in" link in the menu does not make one)
+    const first = ctx.C.headings[0]?.text || '';
+    if (ctx.sources.some((x) => !x.asset && /type=["']?password/i.test(x.content))
+      || /sign in|log in|login|welcome back|create (?:an |your )?account|giriş|kayıt ol|404|not found|bulunamadı|checkout|ödeme|sepet/i.test(first)) return null;
     return {
       id: 'thin-page', cat: 'content', pts: ctx.W < 60 ? 6 : 4, effort: 'rewrite', needsFacts: true,
       title: t('A landing page that says almost nothing', 'Neredeyse hiçbir şey söylemeyen sayfa'),

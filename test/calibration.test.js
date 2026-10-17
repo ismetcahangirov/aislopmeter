@@ -73,6 +73,9 @@ test('a browser in dark mode does not make a light site "dark by default"', asyn
 test('thin-page: a landing that says nothing, but not a sign-in page', async () => {
   const landing = page('<h1>Transform your workflow</h1><h2>Built for teams</h2><p>The future of work starts here.</p><button>Get started</button><button>Learn more</button>');
   assert.ok(ids(await scanHtml(landing)).includes('thin-page'));
-  const login = page('<h1>Welcome back</h1><h2>Sign in to continue</h2><label>Email</label><label>Password</label><button>Log in</button>');
+  const login = page('<h1>Your projects</h1><h2>Sign in to continue</h2><label>Email <input type="email"></label><label>Password <input type="password"></label><button>Log in</button>');
   assert.ok(!ids(await scanHtml(login)).includes('thin-page'));
+  // a "Log in" button in the menu does not make a landing page a sign-in page
+  const gated = page('<nav><button>Log in</button><button>Sign up</button></nav><h1>Get Britain talking</h1><p>Answer questions. Share opinions.</p><h2>What users say</h2><button>Create free account</button>');
+  assert.ok(ids(await scanHtml(gated)).includes('thin-page'));
 });

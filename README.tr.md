@@ -16,6 +16,14 @@ AI Slop Meter bir web sitesini, yerelde çalışan bir uygulamayı ya da web pro
 
 Kendi bilgisayarında **MCP sunucusu**, **komut satırı aracı** ve **yer imi (bookmarklet)** olarak çalışır. API anahtarı ya da hesap gerekmez. Taramasını istediğin siteye yapılan istekler dışında hiçbir yere veri gönderilmez.
 
+## Hızlı başlangıç
+
+1. **Bir kez dene**, kurulum yok: `npx -y aislopmeter https://siten.com --lang tr --open`
+2. **Yapay zekâna ekle** (Claude Code, bütün projeler için bir kez): `claude mcp add --scope user aislopmeter -- npx -y aislopmeter mcp`
+3. **Söyle:** "Sitemi slop'tan kurtar, bitince raporu aç." Sorduğu soruları cevapla; düzeltir, tekrar tarar, önce/sonra farkını gösterir.
+
+**[Kullanım kılavuzu](docs/KULLANIM.md)** her şeyi sırasıyla anlatıyor: bütün komutlar, MCP araçları, hazır tarifler (Lovable/Vite uygulamaları, Next.js, CI) ve sorun giderme.
+
 ## Tek tıkla kurulum
 
 [![Cursor'a ekle](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=aislopmeter&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImFpc2xvcG1ldGVyIiwibWNwIl19)
@@ -228,7 +236,7 @@ Neden yapay zekâ hakem değil de kurallar? Bu konudaki en kapsamlı çalışmad
 - **AI ile yazıldığını tespit eden bir araç değildir.** Tamamen AI ile yapılmış bir sayfa temiz çıkabilir, elle yazılmış bir sayfa yüksek skor alabilir.
 - **Arama sıralaması tahmini değildir.** Kontroller Google'ın faydalı içerik ve spam yönergelerine dayanır ama skor bir sıralama değildir.
 - **Türkçe listeler yeni.** Türkçe kaynaklardan ve İngilizce işaretlerin karşılıklarından derlendi; ayar katkısı memnuniyetle karşılanır.
-- **Şimdiye kadar 34 gerçek sitede ayarlandı.** Bu sitelerde AI araçlarıyla yapılan sayfaların medyan puanı 33, elle yapılanlarınki 16 civarındaydı; bu rakamlar 0.2.1'deki yanlış alarm düzeltmelerinden önceki ölçüm ([yöntem ve siteler](docs/CALIBRATION.md)).
+- **Şimdiye kadar 34 gerçek sitede ayarlandı.** AI araçlarıyla yapılan sayfaların medyan puanı 25, elle yapılanlarınki 12 civarında; elle yapılmış hiçbir sayfa 20'ye ulaşmadı ([yöntem ve siteler](docs/CALIBRATION.md)).
 
 ## Gizlilik
 

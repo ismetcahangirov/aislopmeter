@@ -1,0 +1,33 @@
+name: Wrong score or false alarm
+description: A finding that should not be there, or a score that feels wrong
+labels: [calibration]
+body:
+  - type: input
+    id: target
+    attributes:
+      label: URL or what you scanned
+      placeholder: https://example.com
+    validations:
+      required: true
+  - type: input
+    id: finding
+    attributes:
+      label: Finding id (e.g. purple-gradient) or the score you got
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it wrong?
+      description: What did the check see, and what is actually on the page? Screenshots help.
+    validations:
+      required: true
+  - type: dropdown
+    id: expected
+    attributes:
+      label: What score would feel right?
+      options: ['0-19 clean', '20-39 trace', '40-59 noticeable', '60-79 heavy', '80-100 pure slop']
+  - type: input
+    id: version
+    attributes:
+      label: Version (npx aislopmeter -v)

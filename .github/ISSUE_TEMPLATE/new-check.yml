@@ -1,0 +1,21 @@
+name: Idea for a new check
+description: A sign of AI slop the meter does not catch yet (English, Turkish or any language)
+labels: [new-check]
+body:
+  - type: textarea
+    id: sign
+    attributes:
+      label: The sign
+      description: What do readers notice? Give 2-3 example sites or phrases.
+    validations:
+      required: true
+  - type: textarea
+    id: detect
+    attributes:
+      label: How could it be detected?
+      description: Words, CSS, HTML structure, a measurement in the browser…
+  - type: textarea
+    id: source
+    attributes:
+      label: Source (optional)
+      description: Research, an article or a design review that describes it

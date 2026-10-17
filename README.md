@@ -16,6 +16,14 @@ AI Slop Meter scores a website, a local app or a web project for *slop*: generic
 
 It runs on your machine as an **MCP server**, a **CLI** and a **bookmarklet**. No API keys, no account, nothing sent anywhere except the requests to the site you asked it to scan.
 
+## Quick start
+
+1. **Try it once**, nothing to install: `npx -y aislopmeter https://your-site.com --open`
+2. **Add it to your AI** (Claude Code, once for all projects): `claude mcp add --scope user aislopmeter -- npx -y aislopmeter mcp`
+3. **Ask:** "Rescue my site from slop. Open the report when you're done." Answer the questions it asks; it fixes, re-scans and shows before and after.
+
+The **[usage guide](docs/USAGE.md)** walks through it in order, with every command, the MCP tools, ready-made recipes (Lovable/Vite apps, Next.js, CI) and troubleshooting.
+
 ## Install in one click
 
 [![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=aislopmeter&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImFpc2xvcG1ldGVyIiwibWNwIl19)
@@ -229,7 +237,7 @@ Why rules and not an AI judge? In the largest study so far, LLMs asked "is this 
 - **Not an AI-authorship detector.** A page made entirely with AI can score clean, and a hand-written page can score high.
 - **Not a ranking oracle.** The checks follow Google's helpful-content and spam guidance, but the score is not a search ranking.
 - **The Turkish lists are young.** They come from Turkish sources and known English tells; calibration help is welcome.
-- **Calibrated on 34 real sites so far.** On those, pages built with AI tools scored a median of 33 and hand-made pages about 16, before the false-alarm fixes in 0.2.1 ([how and which sites](docs/CALIBRATION.md)).
+- **Calibrated on 34 real sites so far.** Pages built with AI tools scored a median of 25, hand-made pages about 12, and no hand-made page reached 20 ([how and which sites](docs/CALIBRATION.md)).
 
 ## Privacy
 
