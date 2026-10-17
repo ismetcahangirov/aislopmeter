@@ -131,7 +131,8 @@ function buildCorpus(html, { url = '' } = {}) {
     : /<body[\s>]/i.test(html) ? html
     : /<html[\s>]/i.test(html) ? html.replace(/<\/head\s*>|<html\b[^>]*>/i, '$&<body>')
     : `<!doctype html><html><head></head><body>${html}</body></html>`;
-  const { document: doc } = parseHTML(src);
+  // a line break separates words on screen; textContent would glue "Deneyimi<br>Yeniden" together
+  const { document: doc } = parseHTML(src.replace(/<br\s*\/?>/gi, ' $&'));
   const body = doc.body || doc.documentElement;
   const all = [...doc.querySelectorAll('*')];
   const text = body ? blockText(body) : '';

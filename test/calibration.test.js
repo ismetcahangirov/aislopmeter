@@ -79,3 +79,26 @@ test('thin-page: a landing that says nothing, but not a sign-in page', async () 
   const gated = page('<nav><button>Log in</button><button>Sign up</button></nav><h1>Get Britain talking</h1><p>Answer questions. Share opinions.</p><h2>What users say</h2><button>Create free account</button>');
   assert.ok(ids(await scanHtml(gated)).includes('thin-page'));
 });
+
+test('a crawl treats /index.html and / as one page', async () => {
+  const { pageKey } = await import('../src/crawl.js');
+  assert.equal(pageKey('https://x.test/index.html'), pageKey('https://x.test/'));
+  assert.equal(pageKey('https://x.test/blog/index.htm'), pageKey('https://x.test/blog/'));
+});
+
+test('a line break separates words in headings', async () => {
+  const r = await scanHtml(page('<h1>Kahvede Deneyimi<br>Yeniden Tanımlıyoruz</h1>' + prose(3)));
+  assert.ok(r.findings.every((f) => !JSON.stringify(f).includes('DeneyimiYeniden')));
+});
+
+test('a price left as ₺XXX is template filler', async () => {
+  const r = await scanHtml(page(prose(4) + '<div class="price">₺XXX<small>/ay</small></div>'));
+  assert.ok(ids(r).includes('placeholder'), ids(r).join(' '));
+  const r2 = await scanHtml(page(prose(4) + '<p>Size XXL beden, 2XL ve 3XL de var.</p>'));
+  assert.ok(!ids(r2).includes('placeholder'), ids(r2).join(' '));
+});
+
+test('a short contact page is not a thin page', async () => {
+  const contact = page('<h1>Bize yaz</h1><p>merhaba@kavruk.coffee</p><h2>Atölyeye gel</h2><button>Gönder</button>').replace('<title>Test page</title>', '<title>İletişim</title>');
+  assert.ok(!ids(await scanHtml(contact)).includes('thin-page'));
+});

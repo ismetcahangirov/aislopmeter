@@ -14,13 +14,13 @@ const VISUAL_PAGES = 6;
 
 const bareHost = (h) => h.toLowerCase().replace(/^www\./, '');
 
-/** Canonical form used to de-duplicate: no hash, no tracking params, no trailing slash. */
+/** Canonical form used to de-duplicate: no hash, no tracking params, no trailing slash, "/index.html" = "/". */
 export function pageKey(u) {
   const x = new URL(u);
   x.hash = '';
   for (const k of [...x.searchParams.keys()]) if (TRACKING.test(k)) x.searchParams.delete(k);
   x.searchParams.sort();
-  const path = x.pathname.replace(/\/+$/, '') || '/';
+  const path = x.pathname.replace(/\/index\.(?:html?|php)$/i, '/').replace(/\/+$/, '') || '/';
   return `${bareHost(x.host)}${path}${x.search}`;
 }
 

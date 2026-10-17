@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3 (2026-10-17)
+
+- **A multi-page example: Kavruk** (`examples/kavruk`). A six-page roastery site in Turkish, before (74) and after a rescue (0), with the owner's answers, both reports and per-page scores.
+- **Found while building it:** prices left as `₺XXX` now count as template filler; a crawl treats `/index.html` and `/` as one page; `<br>` no longer glues words together in headings; a short contact page is not a thin page.
+
 ## 0.2.2 (2026-10-17)
 
 - **`thin-page` on gated landing pages.** A "Log in" button in the menu no longer makes a page count as a sign-in page; only the main heading and password fields do.

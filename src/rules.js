@@ -161,7 +161,9 @@ const content = [
     // sign-in, checkout and error pages are short on purpose (a "Log in" link in the menu does not make one)
     const first = ctx.C.headings[0]?.text || '';
     if (ctx.sources.some((x) => !x.asset && /type=["']?password/i.test(x.content))
-      || /sign in|log in|login|welcome back|create (?:an |your )?account|giriş|kayıt ol|404|not found|bulunamadı|checkout|ödeme|sepet/i.test(first)) return null;
+      || /sign in|log in|login|welcome back|create (?:an |your )?account|giriş|kayıt ol|404|not found|bulunamadı|checkout|ödeme|sepet/i.test(first)
+      // a contact page is short by nature
+      || /contact|get in touch|iletişim|bize (?:yaz|ulaş)/i.test(`${first} ${ctx.C.meta?.title || ''} ${ctx.C.url || ''}`) || /iletisim|contact/i.test(ctx.C.url || '')) return null;
     return {
       id: 'thin-page', cat: 'content', pts: ctx.W < 60 ? 6 : 4, effort: 'rewrite', needsFacts: true,
       title: t('A landing page that says almost nothing', 'Neredeyse hiçbir şey söylemeyen sayfa'),

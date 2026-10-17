@@ -132,6 +132,7 @@ export const PLACEHOLDER = [
   ['insert', /(?<![\w$)\]])\[(?:insert|your |buraya|şirket|adınız|firma|ürün|şehir|company|client|product|name|city|isim)[^\]="']{0,30}\]|INSERT_[A-Z_]{3,}|PASTE_[A-Z_]*_HERE|\b20\d\d-XX-XX\b/i],
   // an unrendered {{ variable }} is a leftover only in a rendered page; in Vue/Handlebars sources it is normal
   ['template-var', /\{\{\s*[a-z_]+\s*\}\}/i, 'page'],
+  ['price', /[₺$€£]\s?(?:X{2,}|x{3,}|\?\?)(?![\w])|(?<![\w])X{2,}(?:[.,]X{2})?\s?(?:TL|₺|USD|EUR)\b/],
   ['example', /example\.com|placeholder text|123 main st|\(555\) ?\d{3}|555-0\d{3}|your-?email@/i],
 ];
 
