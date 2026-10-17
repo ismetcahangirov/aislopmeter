@@ -8,9 +8,16 @@ import {
 import * as LX from './lexicon.js';
 
 const t = (en, tr) => ({ en, tr });
+// #abc → #aabbcc; alpha dropped (same as designspec.js, kept here so the browser build needs no fs)
+const hex6 = (h) => {
+  let x = String(h).toLowerCase().replace(/^#/, '');
+  if (x.length === 3 || x.length === 4) x = x.slice(0, 3).split('').map((c) => c + c).join('');
+  return x.length >= 6 ? '#' + x.slice(0, 6) : null;
+};
 
 /* ---------- context ---------- */
-export function buildContext(C, { now = new Date() } = {}) {
+export function buildContext(C, opts = {}) {
+  const now = opts.now || new Date();
   const text = C.text || '';
   const lines = text.split('\n').filter(Boolean);
   const words = wordsOf(text);
@@ -31,6 +38,8 @@ export function buildContext(C, { now = new Date() } = {}) {
     jsText: C.jsText || '',
     // measurements from a real browser, when one was available (src/visual.js)
     vis: C.visual || null,
+    // DESIGN.md of the project, when there is one (src/designspec.js)
+    designSpec: opts.designSpec || null,
   };
 }
 
@@ -1012,6 +1021,180 @@ const design = [
       fix: t('Use fewer icons. Where one helps, pick or draw icons that show this product, or use a set with a character of its own.', 'Daha az ikon kullanın. Gerektiği yerde bu ürünü gösteren ikonlar seçin ya da çizin, ya da kendine özgü bir set kullanın.'),
     };
   },
+
+  /* ---- template signs that Impeccable-style catalogs list; measured when a browser was available ---- */
+  function templateSigns(ctx) {
+    const out = [];
+    const vis = ctx.vis?.signs;
+    const cssRules = [];
+    for (const c of ctx.C.css) for (const m of c.text.matchAll(/([^{}]{1,300})\{([^{}]{0,3000})\}/g)) cssRules.push({ sel: m[1].trim(), body: m[2], loc: c.loc, text: m[0] });
+
+    // decorative grid or dot background
+    const gridCss = cssRules.filter((r) => /(?:linear|radial)-gradient\([^;]*(?:1px|0\.5px)\s*,\s*transparent|transparent\s+(?:1px|0\.5px)/i.test(r.body) && /background-size/i.test(r.body));
+    const gridCls = ctx.classTokens.filter((x) => /^(?:[\w-]+:)*bg-(?:grid(?:-[\w/-]+)?|dot(?:s|-pattern|-grid)?|\[(?:linear|radial)-gradient\([^\]]*1px[^\]]*\])$/.test(x.tok));
+    if (gridCss.length || gridCls.length || vis?.gridBg) {
+      out.push({
+        id: 'grid-background', cat: 'design', pts: 1.5, effort: 'redesign',
+        title: t('Decorative grid or dot background', 'Süs amaçlı ızgara ya da nokta arka plan'),
+        detail: t('A faint grid or dot pattern behind the content, the backdrop of countless AI-built landing pages.', 'İçeriğin arkasında soluk bir ızgara ya da nokta deseni; sayısız AI yapımı açılış sayfasının fonu.'),
+        evidence: uniq([...gridCls.map((x) => x.tok), ...gridCss.map((r) => clip(r.sel, 50)), ...(vis?.gridBg ? [`${vis.gridBg} large patterned areas (measured)`] : [])]).slice(0, 4),
+        locations: locs([...gridCls.map((x) => x.loc && { ...x.loc, snippet: x.tok }), ...gridCss.map((r) => r.loc && { ...r.loc, snippet: clip(r.text, 80) })]),
+        fix: t('Remove the pattern. If the section needs separation, use a plain change of background or a rule.', 'Deseni kaldırın. Bölümün ayrılması gerekiyorsa düz bir arka plan değişimi ya da çizgi kullanın.'),
+      });
+    }
+
+    // hairline border with a wide soft shadow
+    const hairCss = cssRules.filter((r) => /border(?:-top|-left)?\s*:\s*1px\s+solid\s+(?:rgba?\([^)]*,\s*0?\.\d+\)|#[0-9a-f]{8}|hsla?\()/i.test(r.body) && /box-shadow\s*:[^;]*?(?:\d+px\s+){2}(?:[3-9]\d|\d{3})px/i.test(r.body));
+    const hairCls = ctx.C.classes.filter((c) => /\bborder\b|\bborder-(?:white|black|gray|zinc|slate|neutral)-?\d*\/\d+\b/.test(c.value) && /\bborder-(?:white|black|gray|zinc|slate|neutral)(?:-\d+)?\/(?:5|10|15|20)\b/.test(c.value) && /\bshadow-(?:xl|2xl|\[)/.test(c.value));
+    const hairN = hairCss.length + hairCls.length + (vis?.hairline >= 3 ? vis.hairline : 0);
+    if (hairN >= 3) {
+      out.push({
+        id: 'hairline-shadow', cat: 'design', pts: 1.5, effort: 'redesign',
+        title: t('Hairline borders with wide soft shadows', 'İnce kenarlık ve geniş yumuşak gölge'),
+        detail: t(`${hairN} boxes pair a 1px translucent border with a large blurred shadow: the default "floating card" of component kits.`, `${hairN} kutu 1px yarı saydam kenarlığı büyük ve bulanık bir gölgeyle birleştiriyor: bileşen kitlerinin varsayılan "yüzen kart"ı.`),
+        evidence: uniq([...hairCls.map((c) => clip(c.value, 60)), ...hairCss.map((r) => clip(r.sel, 50))]).slice(0, 4),
+        locations: locs([...hairCls.map((c) => locOf(c, c.value)), ...hairCss.map((r) => r.loc && { ...r.loc, snippet: clip(r.text, 80) })]),
+        fix: t('Pick one: a visible border or a shadow, sized to how far the box should float. Most content does not need to float.', 'Birini seçin: görünür bir kenarlık ya da kutunun ne kadar yüzmesi gerekiyorsa o kadar gölge. Çoğu içeriğin yüzmesine gerek yok.'),
+      });
+    }
+
+    // small uppercase labels above headings, and "01 / 02 / 03" section numbers
+    const eyeCls = ctx.C.classes.filter((c) => /\buppercase\b/.test(c.value) && /\btracking-(?:wide|wider|widest|\[[\d.]+em\])\b/.test(c.value) && /\btext-(?:xs|sm|\[1[0-4]px\])\b/.test(c.value));
+    const eyeCss = cssRules.filter((r) => /eyebrow|overline|kicker|pre-?title|section-label|subheading|tagline/i.test(r.sel) && /text-transform\s*:\s*uppercase/i.test(r.body));
+    const eyeN = Math.max(eyeCls.length + eyeCss.length, vis?.eyebrows || 0);
+    const numN = vis?.numbered || 0;
+    if (eyeN >= 3 || numN >= 2) {
+      out.push({
+        id: 'eyebrow-labels', cat: 'design', pts: eyeN >= 3 && numN >= 2 ? 2.5 : 1.5, effort: 'redesign',
+        title: t('Small caps labels above every heading', 'Her başlığın üstünde küçük büyük harfli etiket'),
+        detail: t(`${eyeN ? `${eyeN} tiny letter-spaced labels sit above headings` : ''}${eyeN && numN ? ', and ' : ''}${numN ? `${numN} sections are numbered "01, 02, 03"` : ''}. Both repeat the heading's job and come straight from landing-page templates.`, `${eyeN ? `${eyeN} başlığın üstünde küçük, harf aralığı açılmış etiket var` : ''}${eyeN && numN ? ', ayrıca ' : ''}${numN ? `${numN} bölüm "01, 02, 03" diye numaralanmış` : ''}. İkisi de başlığın işini tekrarlıyor ve doğrudan açılış sayfası şablonlarından geliyor.`),
+        evidence: uniq([...(ctx.vis?.signs?.eyebrowSamples || []), ...eyeCls.map((c) => clip(c.value, 60)), ...eyeCss.map((r) => clip(r.sel, 40))]).slice(0, 5),
+        locations: locs([...eyeCls.map((c) => locOf(c, c.value)), ...eyeCss.map((r) => r.loc && { ...r.loc, snippet: clip(r.text, 80) })]),
+        fix: t('Delete the labels and the numbers. If a heading needs a label to be understood, rewrite the heading.', 'Etiketleri ve numaraları silin. Bir başlık anlaşılmak için etikete ihtiyaç duyuyorsa başlığı yeniden yazın.'),
+      });
+    }
+
+    // a hero headline set huge
+    const h1Size = ctx.vis?.layout?.hierarchy?.h1;
+    const bigCls = ctx.C.classes.filter((c) => c.tag === 'h1' && /\b(?:[\w-]+:)?text-(?:7xl|8xl|9xl|\[(?:[89]|1\d)\d?(?:px|rem)\])\b/.test(c.value));
+    if ((h1Size && h1Size >= 88) || bigCls.length) {
+      out.push({
+        id: 'giant-hero', cat: 'design', pts: 1, effort: 'redesign',
+        title: t('Oversized hero headline', 'Aşırı büyük açılış başlığı'),
+        detail: t(`The main headline is set ${h1Size ? `at ${Math.round(h1Size)}px` : 'at 7xl or larger'}, so a few generic words fill the first screen.`, `Ana başlık ${h1Size ? `${Math.round(h1Size)}px` : '7xl ya da daha büyük'} boyutunda; birkaç genel kelime ilk ekranı dolduruyor.`),
+        evidence: bigCls.length ? uniq(bigCls.map((c) => clip(c.value, 60))).slice(0, 2) : [`h1 ${Math.round(h1Size)}px (measured)`],
+        locations: locs(bigCls.map((c) => locOf(c, c.value))),
+        fix: t('Size the headline for what it says. A specific sentence at 40-56px says more than three words at 120px.', 'Başlığı söylediği şeye göre boyutlandırın. 40-56px\'lik somut bir cümle, 120px\'lik üç kelimeden fazlasını söyler.'),
+      });
+    }
+    return out;
+  },
+
+  /* ---- motion tells: bounce easing, pulsing dots, marquees, animations that move the layout ---- */
+  function motionTells(ctx) {
+    const kinds = [];
+    const ev = [];
+    const L = [];
+    const all = ctx.cssText + '\n' + ctx.jsText;
+    // overshooting easing: cubic-bezier with a y outside 0..1, spring/back/elastic presets
+    const overshoot = [...ctx.cssText.matchAll(/cubic-bezier\(\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*\)/g)].filter((m) => +m[2] > 1 || +m[2] < 0 || +m[4] > 1 || +m[4] < 0);
+    const springs = findAll(ctx, /type:\s*["']spring["']|\bbounce:\s*0?\.\d|ease:\s*["'](?:backOut|backInOut|anticipate|elastic[\w.]*|back\.out[^"']*)["']|ease-out-back|easeOutBack|easeOutElastic/g, 6);
+    const bounceCls = ctx.classTokens.filter((x) => /^(?:[\w-]+:)*animate-bounce$/.test(x.tok));
+    // one deliberate overshoot (a gauge needle, a toggle) is a choice; a habit is the tell
+    if (overshoot.length >= 2 || springs.length || bounceCls.length) { kinds.push('bounce'); ev.push(...overshoot.slice(0, 2).map((m) => m[0]), ...springs.slice(0, 2).map((s) => clip(s.match, 40)), ...bounceCls.slice(0, 1).map((x) => x.tok)); L.push(...bounceCls.map((x) => x.loc && { ...x.loc, snippet: x.tok }), ...springs.map((s) => s.loc && { ...s.loc, snippet: clip(s.match, 40) })); }
+    // pulsing status dot
+    const ping = ctx.C.classes.filter((c) => /\banimate-ping\b/.test(c.value) || (/\banimate-pulse\b/.test(c.value) && /\brounded-full\b/.test(c.value) && /\b[hw]-(?:1\.5|2|2\.5|3)\b/.test(c.value)));
+    if (ping.length || ctx.vis?.signs?.pulsingDots) { kinds.push('pulsing dot'); ev.push(...ping.slice(0, 2).map((c) => clip(c.value, 50))); L.push(...ping.map((c) => locOf(c, c.value))); }
+    // auto-scrolling logo band
+    const marq = findAll(ctx, /<marquee\b|\banimate-(?:marquee|scroll|infinite-scroll|ticker)\b|class=["'][^"']*\bmarquee\b|@keyframes\s+(?:marquee|scroll-x|ticker|infinite-scroll)\b/gi, 4);
+    if (marq.length || ctx.vis?.signs?.marquees) { kinds.push('marquee'); ev.push(...marq.slice(0, 2).map((m) => clip(m.match, 40))); L.push(...marq.map((m) => m.loc && { ...m.loc, snippet: clip(m.match, 40) })); }
+    // animating layout properties (jank, content jumps); max-height accordions are fine
+    const layoutAnim = [];
+    for (const c of ctx.C.css) {
+      const tr = c.text.match(/transition(?:-property)?\s*:\s*([^;}]+)/gi) || [];
+      if (tr.some((x) => /(?:^|[\s,:])(?:width|height|top|left|right|bottom|margin(?:-\w+)?|padding(?:-\w+)?)(?=[\s,;]|$)/i.test(x.replace(/max-height|min-height|max-width|min-width/gi, '')))) layoutAnim.push(c);
+      else if (/@keyframes[^{]*\{(?:[^{}]*\{[^{}]*\b(?:width|height|top|left|margin-top|margin-left)\s*:[^{}]*\})+/i.test(c.text)) layoutAnim.push(c);
+    }
+    if (layoutAnim.length) { kinds.push('layout animation'); ev.push(...layoutAnim.slice(0, 2).map((c) => clip(c.text.replace(/\s+/g, ' '), 60))); L.push(...layoutAnim.map((c) => locOf(c, 'transition'))); }
+    if (!kinds.length || !all) return null;
+    return {
+      id: 'motion-tells', cat: 'design', pts: Math.min(3, kinds.length), effort: 'redesign',
+      title: t('Template motion: bounces, pulsing dots, marquees', 'Şablon hareketleri: zıplama, yanıp sönen nokta, kayan bant'),
+      detail: t(`Found: ${kinds.join(', ')}. Springy easing, a pulsing "live" dot and an endless logo band are motion added for its own sake; animating width, height or position also makes the page jump.`, `Bulunanlar: ${kinds.map((k) => ({ bounce: 'zıplayan geçiş', 'pulsing dot': 'yanıp sönen nokta', marquee: 'kayan bant', 'layout animation': 'düzeni oynatan animasyon' })[k]).join(', ')}. Yaylanan geçişler, yanıp sönen "canlı" nokta ve bitmeyen logo bandı kendisi için eklenmiş hareketlerdir; genişlik, yükseklik ya da konum animasyonu sayfayı da zıplatır.`),
+      evidence: uniq(ev).slice(0, 5),
+      locations: locs(L),
+      fix: t('Use plain ease-out curves, show static logos (or none), drop the pulse. Animate only transform and opacity.', 'Düz ease-out geçişleri kullanın, logoları sabit gösterin (ya da hiç göstermeyin), nabız efektini kaldırın. Sadece transform ve opacity animasyonu yapın.'),
+    };
+  },
+
+  /* ---- measured in the browser: cards inside cards, flat type ---- */
+  function layoutDesign(ctx) {
+    const lay = ctx.vis?.layout;
+    if (!lay) return null;
+    const out = [];
+    if (lay.nested?.n >= 2) {
+      out.push({
+        id: 'nested-cards', cat: 'design', pts: 1.5, effort: 'redesign',
+        title: t('Cards inside cards', 'Kart içinde kart'),
+        detail: t(`${lay.nested.n} boxed, rounded cards sit inside other boxed cards. Each layer adds a border and a shadow and takes width away from the content.`, `${lay.nested.n} kenarlıklı, yuvarlak köşeli kart başka bir kartın içinde duruyor. Her katman bir kenarlık ve gölge ekliyor, içerikten genişlik çalıyor.`),
+        evidence: lay.nested.samples.map((x) => x.text).filter(Boolean).slice(0, 3),
+        fix: t('Keep one level of container. Inside it, separate items with space or a rule, not another card.', 'Tek seviye kutu bırakın. İçindeki öğeleri başka bir kartla değil, boşluk ya da çizgiyle ayırın.'),
+      });
+    }
+    const h = lay.hierarchy || {};
+    if (h.h1 && h.body && (h.h1 / h.body < 1.6 || (h.h1 / h.body < 2 && h.h2 && h.h2 / h.body < 1.15))) {
+      out.push({
+        id: 'flat-hierarchy', cat: 'design', pts: 1, effort: 'redesign',
+        title: t('Flat type hierarchy', 'Düz yazı hiyerarşisi'),
+        detail: t(`Headings are barely bigger than the body (h1 ${Math.round(h.h1)}px${h.h2 ? `, h2 ${Math.round(h.h2)}px` : ''}, body ${Math.round(h.body)}px), so the page has no clear entry point.`, `Başlıklar gövde metninden zar zor büyük (h1 ${Math.round(h.h1)}px${h.h2 ? `, h2 ${Math.round(h.h2)}px` : ''}, gövde ${Math.round(h.body)}px); sayfanın belirgin bir giriş noktası yok.`),
+        evidence: [`h1/body ${Math.round((h.h1 / h.body) * 100) / 100}${h.h2 ? `, h2/body ${Math.round((h.h2 / h.body) * 100) / 100}` : ''}`],
+        fix: t('Use a scale with clear steps (for example 1.25 or 1.333) and let size, weight or face separate the levels.', 'Belirgin basamaklı bir ölçek kullanın (örneğin 1,25 ya da 1,333); seviyeleri boyut, kalınlık ya da yazı tipiyle ayırın.'),
+      });
+    }
+    return out;
+  },
+
+  /* ---- DESIGN.md drift: fonts, colours and radii outside what the project decided ---- */
+  function designDrift(ctx) {
+    const spec = ctx.designSpec;
+    if (!spec) return null;
+    const offColors = new Map(), offFonts = new Map(), offRadii = new Map();
+    const note = (map, key, c) => { if (!map.has(key)) map.set(key, c); };
+    for (const c of ctx.C.css) {
+      if (spec.colors.size) for (const m of c.text.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
+        const h = hex6(m[0]);
+        if (h && h !== '#ffffff' && h !== '#000000' && !spec.colors.has(h)) note(offColors, h, c);
+      }
+      if (spec.fonts.size) for (const m of c.text.matchAll(/font-family\s*:\s*([^;}]+)/gi)) {
+        const first = m[1].split(',')[0].trim().replace(/^["']|["']$/g, '');
+        const key = first.toLowerCase();
+        if (first && !/^var\(/.test(first) && !/^(?:inherit|initial|unset|serif|sans-serif|monospace|system-ui)$/i.test(first) && ![...spec.fonts].some((f) => key === f || key.startsWith(f) || f.startsWith(key))) note(offFonts, first, c);
+      }
+      if (spec.radii.size) for (const m of c.text.matchAll(/border(?:-[a-z]+)*-radius\s*:\s*([^;}]+)/gi)) {
+        for (const v of m[1].matchAll(/(\d+(?:\.\d+)?)px/g)) {
+          const n = +v[1];
+          if (n === 0 || n >= 999 || spec.radii.has(n)) continue;
+          note(offRadii, `${n}px`, c);
+        }
+      }
+    }
+    for (const x of ctx.classTokens) {
+      const m = spec.colors.size && x.tok.match(/\[#([0-9a-fA-F]{3,8})\]/);
+      if (m) { const h = hex6(m[1]); if (h && !spec.colors.has(h)) note(offColors, h, { loc: x.loc, text: x.tok }); }
+    }
+    const kinds = [offColors.size && 'colours', offFonts.size && 'fonts', offRadii.size && 'radii'].filter(Boolean);
+    if (!kinds.length) return null;
+    const list = (map) => [...map.keys()].slice(0, 6).join(', ');
+    return {
+      id: 'design-drift', cat: 'design', pts: Math.min(3, 1 + 0.5 * (offColors.size > 3) + 0.5 * kinds.length), effort: 'quick',
+      title: t('Styles outside DESIGN.md', 'DESIGN.md dışında kalan stiller'),
+      detail: t(`The stylesheets use ${[offColors.size && `${offColors.size} colours`, offFonts.size && `${offFonts.size} fonts`, offRadii.size && `${offRadii.size} corner radii`].filter(Boolean).join(', ')} that ${spec.file ? spec.file.split(/[\\/]/).pop() : 'DESIGN.md'} does not list. This is how an AI drifts back to its defaults one edit at a time.`,
+        `Stil dosyaları ${spec.file ? spec.file.split(/[\\/]/).pop() : 'DESIGN.md'} dosyasında olmayan ${[offColors.size && `${offColors.size} renk`, offFonts.size && `${offFonts.size} yazı tipi`, offRadii.size && `${offRadii.size} köşe yarıçapı`].filter(Boolean).join(', ')} kullanıyor. Yapay zekâ varsayılanlarına tam da böyle, her düzenlemede biraz kayar.`),
+      evidence: [offColors.size && `colours: ${list(offColors)}`, offFonts.size && `fonts: ${list(offFonts)}`, offRadii.size && `radii: ${list(offRadii)}`].filter(Boolean),
+      locations: locs([...offColors.values(), ...offFonts.values(), ...offRadii.values()].map((c) => c.loc && { ...c.loc, snippet: clip(String(c.text || '').replace(/\s+/g, ' '), 80) })),
+      fix: t('Replace each value with the nearest one in DESIGN.md, or add it there on purpose. Tell your AI to read DESIGN.md before every UI edit.', 'Her değeri DESIGN.md\'deki en yakın değerle değiştirin ya da bilerek oraya ekleyin. Yapay zekânıza her arayüz düzenlemesinden önce DESIGN.md\'yi okumasını söyleyin.'),
+    };
+  },
 ];
 
 /* ================= UNFINISHED DETAILS ================= */
@@ -1304,6 +1487,136 @@ const finish = [
       evidence: ['<div id="root"></div>'],
       fix: t('Prerender or server-render the public pages (Vite SSG, Next.js static export, Astro), or at least put the title, description and main text in the HTML.', 'Herkese açık sayfaları önceden ya da sunucuda oluşturun (Vite SSG, Next.js static export, Astro) ya da en azından başlığı, açıklamayı ve ana metni HTML\'e koyun.'),
     };
+  },
+
+  /* ---- readability, measured in the browser (static CSS when there is none) ---- */
+  function readability(ctx) {
+    const lay = ctx.vis?.layout;
+    const out = [];
+    const share = (n) => lay && lay.paragraphs ? n / lay.paragraphs : 0;
+    const bodyRule = ctx.C.css.filter((c) => /(?:^|[}\s,])(?:body|p|article|main|\.prose|\.content)\s*\{[^}]*\}/i.test(c.text));
+    const ruleOf = (prop) => bodyRule.map((c) => (c.text.match(new RegExp(`(?:^|[}\\s,])(?:body|p|article|main|\\.prose|\\.content)\\s*\\{[^}]*${prop}\\s*:\\s*([^;}]+)`, 'i')) || [])[1]).filter(Boolean)[0];
+    const longN = lay?.longLines?.n || 0;
+    if (longN >= 2 && share(longN) >= 0.3) {
+      out.push({
+        id: 'long-lines', cat: 'finish', pts: 1, effort: 'quick',
+        title: t('Lines too long to read comfortably', 'Rahat okunamayacak kadar uzun satırlar'),
+        detail: t(`${longN} paragraphs run past 95 characters a line (comfortable is about 50-75), so the eye loses its place going back.`, `${longN} paragrafta satır başına 95 karakteri geçiyor (rahat olan 50-75 civarı); göz satır başına dönerken yerini kaybediyor.`),
+        evidence: lay.longLines.samples.map((x) => `${x.chars} chars/line: «${x.text}»`).slice(0, 3),
+        fix: t('Limit text columns to about 65ch (max-width: 65ch).', 'Metin sütunlarını yaklaşık 65 karakterle sınırlayın (max-width: 65ch).'),
+      });
+    }
+    const tinyN = lay?.tinyText?.n || 0;
+    const staticSize = !lay && ruleOf('font-size');
+    const staticTiny = staticSize && (/^\s*(?:1[0-3]|[1-9])(?:\.\d+)?px/.test(staticSize) || /^\s*0?\.[0-8]\d*\s*(?:rem|em)/.test(staticSize));
+    if ((tinyN >= 2 && share(tinyN) >= 0.3) || staticTiny) {
+      out.push({
+        id: 'tiny-text', cat: 'finish', pts: 1.5, effort: 'quick',
+        title: t('Body text too small', 'Gövde metni çok küçük'),
+        detail: lay ? t(`${tinyN} paragraphs are set below 14px.`, `${tinyN} paragraf 14px'in altında.`) : t(`Body text is set at ${staticSize.trim()}.`, `Gövde metni ${staticSize.trim()} boyutunda.`),
+        evidence: lay ? lay.tinyText.samples.map((x) => `${x.size}px: «${x.text}»`).slice(0, 3) : [`font-size: ${staticSize.trim()}`],
+        fix: t('Set body text at 16px or more (1rem), and captions no smaller than 14px.', 'Gövde metnini 16px (1rem) ya da üstüne, açıklamaları en az 14px\'e ayarlayın.'),
+      });
+    }
+    const tightN = lay?.tightLeading?.n || 0;
+    const staticLh = !lay && ruleOf('line-height');
+    const staticTight = staticLh && /^\s*[\d.]+\s*$/.test(staticLh) && parseFloat(staticLh) < 1.15;
+    if ((tightN >= 2 && share(tightN) >= 0.3) || staticTight) {
+      out.push({
+        id: 'tight-leading', cat: 'finish', pts: 1, effort: 'quick',
+        title: t('Cramped line spacing', 'Sıkışık satır aralığı'),
+        detail: t('Paragraph lines sit too close together (line-height under 1.15), which makes long text tiring.', 'Paragraf satırları birbirine çok yakın (satır yüksekliği 1,15\'in altında); uzun metin yorucu oluyor.'),
+        evidence: lay ? lay.tightLeading.samples.map((x) => `${x.ratio}: «${x.text}»`).slice(0, 3) : [`line-height: ${staticLh.trim()}`],
+        fix: t('Use line-height 1.45-1.65 for body text.', 'Gövde metni için 1,45-1,65 satır yüksekliği kullanın.'),
+      });
+    }
+    const justN = lay?.justified?.n || 0;
+    const justStatic = !lay ? (ctx.cssText.match(/text-align\s*:\s*justify/gi) || []).length + ctx.classTokens.filter((x) => x.tok === 'text-justify').length : 0;
+    if (justN >= 2 || justStatic >= 2) {
+      out.push({
+        id: 'justified-text', cat: 'finish', pts: 0.5, effort: 'quick',
+        title: t('Justified text', 'İki yana yaslı metin'),
+        detail: t('Justified paragraphs on the web open uneven gaps between words, worse on phones.', 'Web\'de iki yana yaslı paragraflar kelimeler arasında düzensiz boşluklar açar; telefonda daha da kötü.'),
+        evidence: lay ? lay.justified.samples.map((x) => x.text).slice(0, 2) : ['text-align: justify'],
+        fix: t('Align text left.', 'Metni sola yaslayın.'),
+      });
+    }
+    return out;
+  },
+
+  /* ---- a layout that looks unfinished: overflow, covered text, text on the window edge, no padding ---- */
+  function brokenLayout(ctx) {
+    const lay = ctx.vis?.layout;
+    if (!lay) return null;
+    const out = [];
+    if (lay.spill?.page || lay.spill?.n >= 2) {
+      out.push({
+        id: 'overflow', cat: 'finish', pts: lay.spill.page ? 2.5 : 1.5, effort: 'quick',
+        title: t('Content spills out of its box', 'İçerik kutusundan taşıyor'),
+        detail: lay.spill.page
+          ? t(`The page is ${lay.spill.pageWidth}px wide on a ${ctx.vis.viewport[0]}px screen, so it scrolls sideways.`, `Sayfa ${ctx.vis.viewport[0]}px ekranda ${lay.spill.pageWidth}px genişliğinde; yana doğru kayıyor.`)
+          : t(`${lay.spill.n} boxes are wider inside than out.`, `${lay.spill.n} kutunun içeriği kendisinden geniş.`),
+        evidence: lay.spill.samples.map((x) => `+${x.by}px: «${x.text}»`).slice(0, 3),
+        fix: t('Find the element wider than its parent (a long word, a fixed width, an image without max-width) and let it wrap or shrink.', 'Ebeveyninden geniş olan öğeyi bulun (uzun bir kelime, sabit genişlik, max-width\'i olmayan bir görsel) ve satır kaydırmasına ya da küçülmesine izin verin.'),
+      });
+    }
+    if (lay.covered?.n >= 2) {
+      out.push({
+        id: 'text-covered', cat: 'finish', pts: 2, effort: 'quick',
+        title: t('Text hidden under other elements', 'Başka öğelerin altında kalan metin'),
+        detail: t(`${lay.covered.n} pieces of text are covered by another element on the first screens.`, `İlk ekranlarda ${lay.covered.n} metin parçası başka bir öğenin altında kalıyor.`),
+        evidence: lay.covered.samples.map((x) => `under <${x.by}>: «${x.text}»`).slice(0, 3),
+        fix: t('Check the stacking: an absolutely positioned image or block is sitting on top of the text.', 'Katman sırasına bakın: mutlak konumlu bir görsel ya da blok metnin üstünde duruyor.'),
+      });
+    }
+    if (lay.edge?.n >= 3) {
+      out.push({
+        id: 'edge-text', cat: 'finish', pts: 1.5, effort: 'quick',
+        title: t('Text touching the edge of the screen', 'Ekran kenarına yapışık metin'),
+        detail: t(`${lay.edge.n} blocks of text start or end within 4px of the window edge.`, `${lay.edge.n} metin bloğu pencere kenarına 4px'ten yakın başlıyor ya da bitiyor.`),
+        evidence: lay.edge.samples.map((x) => x.text).slice(0, 3),
+        fix: t('Give the page a side gutter (16-24px on phones, more on desktop).', 'Sayfaya yan boşluk verin (telefonda 16-24px, masaüstünde daha fazla).'),
+      });
+    }
+    if (lay.cramped?.n >= 3) {
+      out.push({
+        id: 'cramped', cat: 'finish', pts: 1.5, effort: 'quick',
+        title: t('Boxes with no inner padding', 'İç boşluğu olmayan kutular'),
+        detail: t(`${lay.cramped.n} coloured boxes have under 8px of padding, so text presses against their edge.`, `${lay.cramped.n} renkli kutuda 8px'ten az iç boşluk var; metin kenara dayanıyor.`),
+        evidence: lay.cramped.samples.map((x) => `${x.pad}px: «${x.text}»`).slice(0, 3),
+        fix: t('Use padding from one spacing scale (for example 16 or 24px) on every filled box.', 'Dolgulu her kutuda tek bir boşluk ölçeğinden iç boşluk kullanın (örneğin 16 ya da 24px).'),
+      });
+    }
+    return out;
+  },
+
+  /* ---- page health: errors while loading, images that do not load ---- */
+  function pageHealth(ctx) {
+    const out = [];
+    const errs = ctx.vis?.jsErrors || [];
+    if (errs.length) {
+      out.push({
+        id: 'js-errors', cat: 'finish', pts: errs.length >= 2 ? 2.5 : 1.5, effort: 'quick',
+        title: t('JavaScript errors while the page loads', 'Sayfa yüklenirken JavaScript hataları'),
+        detail: t(`${errs.length} error${errs.length > 1 ? 's' : ''} thrown on load. Parts of the page may not work for visitors.`, `Yüklenirken ${errs.length} hata oluştu. Sayfanın bazı kısımları ziyaretçide çalışmıyor olabilir.`),
+        evidence: errs.slice(0, 3),
+        fix: t('Open the browser console on this page, fix the first error and reload; later errors are often caused by the first.', 'Bu sayfada tarayıcı konsolunu açın, ilk hatayı düzeltip yenileyin; sonraki hatalar çoğu zaman ilkinden kaynaklanır.'),
+      });
+    }
+    const broken = ctx.vis?.brokenImages || [];
+    const emptySrc = findAll(ctx, /<img\b[^>]*\bsrc=["'](?:#?|about:blank)["']/gi, 10, { copyOnly: true });
+    if (broken.length || emptySrc.length) {
+      const n = broken.length + emptySrc.length;
+      out.push({
+        id: 'broken-images', cat: 'finish', pts: Math.min(3, 1 + n * 0.5), effort: 'quick',
+        title: t('Broken images', 'Kırık görseller'),
+        detail: t(`${n} image${n > 1 ? 's' : ''} did not load or have no source.`, `${n} görsel yüklenmedi ya da kaynağı yok.`),
+        evidence: uniq([...broken, ...emptySrc.map((h) => clip(h.match, 60))]).slice(0, 4),
+        locations: locs(emptySrc.map((h) => h.loc && { ...h.loc, snippet: clip(h.match, 60) })),
+        fix: t('Fix the paths or remove the images. Ask the owner for the real photos if they were placeholders.', 'Yolları düzeltin ya da görselleri kaldırın. Yer tutucuysalar gerçek fotoğrafları sahibine sorun.'),
+      });
+    }
+    return out;
   },
 ];
 

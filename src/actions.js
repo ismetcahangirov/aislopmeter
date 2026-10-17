@@ -24,6 +24,116 @@ const A = {
     example: t('Before: "A game-changing tool for teams." After: "Cuts our customers\' month-end close from 5 days to 2."',
       'Önce: "Ekipler için çığır açan bir araç." Sonra: "Müşterilerimizin ay sonu kapanışını 5 günden 2 güne indiriyor."'),
   },
+  /* ---------- added in 0.3: template signs, motion, layout, health, design spec ---------- */
+  'grid-background': {
+    steps: [
+      t('Find the element with the grid or dot pattern (listed under evidence) and remove the background-image.', 'Izgara ya da nokta desenli öğeyi bulun (kanıtta yazıyor) ve background-image\'ı kaldırın.'),
+      t('If the section needs to stand apart, change its background colour or add one rule above it.', 'Bölümün ayrışması gerekiyorsa arka plan rengini değiştirin ya da üstüne tek bir çizgi koyun.'),
+    ],
+    done: t('No background pattern that does not depict something.', 'Bir şeyi tasvir etmeyen hiçbir arka plan deseni yok.'),
+  },
+  'hairline-shadow': {
+    steps: [
+      t('For each card, decide: does it need to float above the page? Most do not.', 'Her kart için karar verin: sayfanın üstünde yüzmesi gerekiyor mu? Çoğunun gerekmiyor.'),
+      t('Keep either the border or the shadow, not both. A real border is fine at full opacity.', 'Kenarlığı ya da gölgeyi tutun, ikisini birden değil. Gerçek bir kenarlık tam opaklıkta da güzel durur.'),
+    ],
+    done: t('No box combines a 1px translucent border with a wide blurred shadow.', 'Hiçbir kutu 1px yarı saydam kenarlığı geniş bulanık gölgeyle birleştirmiyor.'),
+  },
+  'eyebrow-labels': {
+    steps: [
+      t('Read each heading without the small label above it. If it still makes sense, delete the label.', 'Her başlığı üstündeki küçük etiket olmadan okuyun. Hâlâ anlamlıysa etiketi silin.'),
+      t('Remove "01 / 02 / 03" section numbers unless the order matters to the reader (steps, a sequence).', 'Sıra okuyucu için önemli değilse (adımlar, bir süreç) "01 / 02 / 03" bölüm numaralarını kaldırın.'),
+      t('If a heading needed the label, rewrite the heading so it says the thing itself.', 'Bir başlık etikete ihtiyaç duyuyorsa başlığı, söylemek istediğini kendisi söyleyecek şekilde yeniden yazın.'),
+    ],
+    done: t('Headings stand on their own; no decorative labels above them.', 'Başlıklar kendi başına anlaşılıyor; üstlerinde süs etiketi yok.'),
+    example: t('Before: "FEATURES" above "Everything you need". After: "Reminders that sound like you" and no label.', 'Önce: "Everything you need" üstünde "ÖZELLİKLER". Sonra: "Sizin gibi konuşan hatırlatmalar", etiket yok.'),
+  },
+  'giant-hero': {
+    steps: [
+      t('Write the headline as one specific sentence first (what, for whom).', 'Önce başlığı tek, somut bir cümle olarak yazın (ne, kimin için).'),
+      t('Then size it so that sentence fits in two or three lines on a laptop, usually 40-56px.', 'Sonra o cümle dizüstünde iki-üç satıra sığacak şekilde boyutlandırın; genelde 40-56px.'),
+    ],
+    done: t('The first screen shows a full sentence and something concrete, not three huge words.', 'İlk ekran üç dev kelime değil, tam bir cümle ve somut bir şey gösteriyor.'),
+  },
+  'motion-tells': {
+    steps: [
+      t('Replace overshooting cubic-bezier, spring and bounce easings with a plain ease-out.', 'Taşan cubic-bezier, spring ve bounce geçişlerini düz ease-out ile değiştirin.'),
+      t('Remove pulsing "live" dots and endless logo marquees; show logos static, or not at all.', 'Yanıp sönen "canlı" noktaları ve bitmeyen logo bantlarını kaldırın; logoları sabit gösterin ya da hiç göstermeyin.'),
+      t('Animate transform and opacity only, never width, height, top, left or margin.', 'Sadece transform ve opacity animasyonu yapın; width, height, top, left ya da margin asla.'),
+    ],
+    done: t('Nothing bounces, pulses or scrolls by itself; animations do not move the layout.', 'Hiçbir şey kendi kendine zıplamıyor, yanıp sönmüyor ya da kaymıyor; animasyonlar düzeni oynatmıyor.'),
+  },
+  'nested-cards': {
+    steps: [
+      t('Find the outer card and remove its border, shadow and background, or remove them from the inner cards.', 'Dış kartı bulun ve kenarlığını, gölgesini, arka planını kaldırın; ya da bunları içteki kartlardan kaldırın.'),
+      t('Separate the inner items with space or a hairline rule.', 'İçteki öğeleri boşlukla ya da ince bir çizgiyle ayırın.'),
+    ],
+    done: t('No boxed card sits inside another boxed card.', 'Hiçbir kutulu kart başka bir kutulu kartın içinde değil.'),
+  },
+  'flat-hierarchy': {
+    steps: [
+      t('Pick a type scale (for example 16, 20, 25, 31, 39px) and assign h1, h2 and body to it.', 'Bir yazı ölçeği seçin (örneğin 16, 20, 25, 31, 39px) ve h1, h2 ile gövdeyi ona yerleştirin.'),
+      t('Make the h1 at least 1.8x the body size; separate h2 from body by size or weight.', 'h1\'i gövdenin en az 1,8 katı yapın; h2\'yi gövdeden boyut ya da kalınlıkla ayırın.'),
+    ],
+    done: t('Someone squinting at the page can tell the title, the sections and the text apart.', 'Sayfaya gözünü kısarak bakan biri başlığı, bölümleri ve metni ayırt edebiliyor.'),
+  },
+  'long-lines': {
+    steps: [t('Add max-width: 65ch to paragraphs or to the text column.', 'Paragraflara ya da metin sütununa max-width: 65ch ekleyin.')],
+    done: t('Body text runs about 50-75 characters a line.', 'Gövde metninde satır başına 50-75 karakter civarı var.'),
+  },
+  'tiny-text': {
+    steps: [t('Set the body font-size to 1rem (16px) or more and check captions are at least 14px.', 'Gövde font-size değerini 1rem (16px) ya da üstüne alın, açıklamaların en az 14px olduğunu kontrol edin.')],
+    done: t('No paragraph is below 14px; body text is 16px or more.', 'Hiçbir paragraf 14px\'in altında değil; gövde metni 16px ya da üstü.'),
+  },
+  'tight-leading': {
+    steps: [t('Set line-height: 1.5 on body text (1.2-1.3 is fine for headings).', 'Gövde metnine line-height: 1.5 verin (başlıklarda 1,2-1,3 yeterli).')],
+    done: t('Paragraph line-height is between 1.45 and 1.65.', 'Paragraf satır yüksekliği 1,45 ile 1,65 arasında.'),
+  },
+  'justified-text': {
+    steps: [t('Change text-align: justify to left (start).', 'text-align: justify yerine left (start) kullanın.')],
+    done: t('No justified paragraphs.', 'İki yana yaslı paragraf yok.'),
+  },
+  overflow: {
+    steps: [
+      t('In the browser dev tools, find the element wider than the screen (often a fixed width, a long URL or an image).', 'Tarayıcının geliştirici araçlarında ekrandan geniş öğeyi bulun (çoğu zaman sabit bir genişlik, uzun bir URL ya da bir görsel).'),
+      t('Give it max-width: 100%, let long words break (overflow-wrap: anywhere), or remove the fixed width.', 'Ona max-width: 100% verin, uzun kelimelerin bölünmesine izin verin (overflow-wrap: anywhere) ya da sabit genişliği kaldırın.'),
+    ],
+    done: t('No sideways scroll at 1366px or at 375px.', '1366px\'te de 375px\'te de yana kaydırma yok.'),
+  },
+  'text-covered': {
+    steps: [t('Find the absolutely positioned element over the text (listed under evidence) and move it, or put the text above it in the stacking order.', 'Metnin üstündeki mutlak konumlu öğeyi bulun (kanıtta yazıyor) ve yerini değiştirin ya da metni katman sırasında onun üstüne alın.')],
+    done: t('All text on the first screens can be read and selected.', 'İlk ekranlardaki bütün metin okunabiliyor ve seçilebiliyor.'),
+  },
+  'edge-text': {
+    steps: [t('Add a side padding to the page container: 16-24px on phones, more on wide screens.', 'Sayfa kapsayıcısına yan boşluk ekleyin: telefonda 16-24px, geniş ekranda daha fazla.')],
+    done: t('No text touches the edge of the window.', 'Hiçbir metin pencere kenarına değmiyor.'),
+  },
+  cramped: {
+    steps: [t('Give every filled or bordered box a padding from one scale (16 or 24px).', 'Dolgulu ya da kenarlıklı her kutuya tek bir ölçekten iç boşluk verin (16 ya da 24px).')],
+    done: t('Text never presses against the edge of its box.', 'Metin hiçbir yerde kutusunun kenarına dayanmıyor.'),
+  },
+  'js-errors': {
+    steps: [
+      t('Open the page with the browser console visible and reload.', 'Sayfayı tarayıcı konsolu açıkken yeniden yükleyin.'),
+      t('Fix the first error listed; reload and repeat until the console is clean.', 'Listelenen ilk hatayı düzeltin; konsol temizlenene kadar yenileyip tekrarlayın.'),
+    ],
+    done: t('The console shows no errors on load.', 'Konsolda yükleme sırasında hata yok.'),
+  },
+  'broken-images': {
+    steps: [
+      t('Open each image address listed under evidence; fix the path or upload the file.', 'Kanıttaki her görsel adresini açın; yolu düzeltin ya da dosyayı yükleyin.'),
+      t('If it was a placeholder, ask the owner for the real photo, or remove the image.', 'Yer tutucuysa gerçek fotoğrafı sahibine sorun ya da görseli kaldırın.'),
+    ],
+    done: t('Every image on the page loads.', 'Sayfadaki her görsel yükleniyor.'),
+  },
+  'design-drift': {
+    steps: [
+      t('For each value listed under evidence, use the nearest colour, font or radius from DESIGN.md.', 'Kanıttaki her değer için DESIGN.md\'deki en yakın rengi, yazı tipini ya da yarıçapı kullanın.'),
+      t('If a new value is needed on purpose, add it to DESIGN.md with a line on why.', 'Bilerek yeni bir değer gerekiyorsa nedenini yazarak DESIGN.md\'ye ekleyin.'),
+      t('Tell your AI to read DESIGN.md before every UI change (put it in CLAUDE.md, AGENTS.md or .cursorrules).', 'Yapay zekânıza her arayüz değişikliğinden önce DESIGN.md\'yi okumasını söyleyin (CLAUDE.md, AGENTS.md ya da .cursorrules içine yazın).'),
+    ],
+    done: t('Every colour, font and radius in the stylesheets is in DESIGN.md.', 'Stil dosyalarındaki her renk, yazı tipi ve yarıçap DESIGN.md\'de var.'),
+  },
   'thin-page': {
     steps: [
       t('Write down, for yourself, what a first-time visitor must know: what it is, who it is for, what it costs or how to get it, why you.', 'Kendiniz için, ilk kez gelen birinin bilmesi gerekenleri yazın: ne olduğu, kimin için olduğu, fiyatı ya da nasıl edinileceği, neden siz.'),

@@ -83,10 +83,14 @@ async function launchBrowser() {
 
 async function renderWith(browser, url, timeoutMs, { visual = false } = {}) {
   const page = await browser.newPage({ userAgent: UA.replace('compatible; ', ''), viewport: { width: 1366, height: 900 }, colorScheme: 'light' });
+  // errors thrown while the page loads: a visitor gets a half-working page
+  const jsErrors = [];
+  page.on('pageerror', (e) => { if (jsErrors.length < 5) jsErrors.push(String(e?.message || e).split('\n')[0].slice(0, 160)); });
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: timeoutMs }).catch(() => page.waitForTimeout(3000));
     await page.waitForTimeout(800);
     const vis = visual ? await page.evaluate(measureVisual).catch(() => null) : null;
+    if (vis) vis.jsErrors = jsErrors;
     return { html: await page.content(), visual: vis, reason: null };
   } catch (e) {
     return { html: null, reason: 'render failed', error: String(e.message).split('\n')[0] };
@@ -211,4 +215,16 @@ export function pickInternalLinks(html, baseUrl, max = 5) {
   }
   const rank = (p) => (/(about|hakk|pricing|fiyat|feature|ozellik|özellik|product|urun|service|hizmet|blog|contact|iletisim|team|ekip)/i.test(p) ? 0 : 1);
   return out.sort((a, b) => rank(a) - rank(b)).slice(0, max);
+}
+
+/** A small text file (robots.txt, llms.txt, sitemap.xml): its text, or null when missing or not text. */
+export async function fetchPlain(url, { timeoutMs = 8000, maxBytes = 300 * 1024 } = {}) {
+  const ctl = new AbortController();
+  const tm = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { redirect: 'follow', signal: ctl.signal, headers: { 'user-agent': UA, accept: 'text/plain,text/markdown,application/xml,text/xml;q=0.9,*/*;q=0.1' } });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text.length > maxBytes ? text.slice(0, maxBytes) : text;
+  } catch { return null; } finally { clearTimeout(tm); }
 }

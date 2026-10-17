@@ -11,6 +11,7 @@ import { linkedAssets, looksLikeShell } from './fetch.js';
 import { measureVisual } from './visual.js';
 import { renderReport, labels } from './report.js';
 import { VERSION } from './version.js';
+import { pageChecks, siteChecks, readiness, realText, realXml } from './aeo.js';
 
 const LIB = /(?:font-?awesome|bootstrap|jquery|swiper|slick|aos|normalize|gtag|analytics|googletagmanager|hotjar|clarity|recaptcha|cookie|polyfill|vendor)/i;
 
@@ -46,14 +47,21 @@ export async function scan({ visual = true } = {}) {
   const ids = new Set(findings.map((f) => f.id));
   const pageType = ids.has('portfolio-template') || ids.has('no-work-shown') ? 'portfolio' : guessPageType(C.text);
   const r = finalize({ findings: attachActions(findings), words, lang, pageType });
-  return { kind: 'page', id: 'browser', target: url, url, rendered: shell, visual: !!C.visual, notes: [], meta: C.meta, ...r, version: VERSION };
+  // AI search readiness, from this page and the site's robots.txt, llms.txt and sitemap
+  const robots = await text(location.origin + '/robots.txt');
+  const llms = await text(location.origin + '/llms.txt');
+  const declared = realText(robots) ? (robots.match(/^\s*sitemap\s*:\s*(\S+)/im) || [])[1] : null;
+  let sm = declared && declared.startsWith(location.origin) ? await text(declared) : null;
+  if (!realXml(sm)) sm = await text(location.origin + '/sitemap.xml');
+  const aeo = readiness([...pageChecks(C, { words, pageType, serverShell: shell }), ...siteChecks({ robots: realText(robots) ? robots : null, llms: realText(llms) ? llms : null, sitemap: realXml(sm) || null })]);
+  return { kind: 'page', id: 'browser', target: url, url, rendered: shell, visual: !!C.visual, notes: [], meta: C.meta, ...r, aeo, version: VERSION };
 }
 
 /** A compact summary, handy for scripts and calibration. */
 export async function summary(opts) {
   const r = await scan(opts);
   return {
-    url: r.url, total: r.total, band: r.band, words: r.words, lang: r.lang, pageType: r.pageType, capped: r.capped,
+    url: r.url, total: r.total, band: r.band, words: r.words, lang: r.lang, pageType: r.pageType, capped: r.capped, aeo: r.aeo?.score ?? null,
     cats: Object.fromEntries(Object.entries(r.cats).map(([k, v]) => [k, Math.round(v.pts * 10) / 10])),
     findings: r.findings.filter((f) => f.kind !== 'info').map((f) => `${f.id}:${Math.round(f.pts * 10) / 10}`),
   };
@@ -86,7 +94,8 @@ export async function overlay() {
   const issues = r.findings.filter((f) => f.kind === 'issue').slice(0, 8);
   panel.innerHTML = `<button class="x" aria-label="Close">×</button><h2>AI Slop Meter</h2>
     <p><span class="s">${r.total}</span> <span class="b">/ 100 · ${esc(T.bands[r.band])}</span></p>
-    <p class="b">${esc(T.bandText[r.band])}${r.visual ? '' : ''}</p>
+    <p class="b">${esc(T.bandText[r.band])}</p>
+    ${r.aeo?.total ? `<p class="b">${esc(T.aeo)}: <b>${r.aeo.passed}/${r.aeo.total}</b>${r.aeo.checks.filter((c) => !c.ok).length ? ` · ${tr ? 'eksik' : 'missing'}: ${esc(r.aeo.checks.filter((c) => !c.ok).map((c) => pick(c.label)).join(', '))}` : ''}</p>` : ''}
     <ol>${issues.map((f, i) => `<li><b>${esc(pick(f.title))}</b> <small>${esc(pick(f.fix))}</small><button class="g" data-i="${i}">${tr ? 'Yapay zekâ için kopyala' : 'Copy for your AI'}</button></li>`).join('')}</ol>
     <button data-all="1">${tr ? 'Tüm raporu kopyala' : 'Copy the full report'}</button>
     <p class="b" style="font-size:12px;margin-top:10px">${tr ? 'Bütün site ve dosya:satır için' : 'For the whole site and file:line, run'} <code>npx aislopmeter ${esc(location.origin)}</code></p>`;

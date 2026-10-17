@@ -140,7 +140,7 @@ function buildCorpus(html, { url = '' } = {}) {
   const classes = [];
   for (const el of all) {
     const c = el.getAttribute && el.getAttribute('class');
-    if (c) classes.push({ value: c });
+    if (c) classes.push({ value: c, tag: String(el.tagName || '').toLowerCase() });
   }
   const css = [...doc.querySelectorAll('style')].map((s) => ({ text: s.textContent || '' }));
   for (const el of all) {

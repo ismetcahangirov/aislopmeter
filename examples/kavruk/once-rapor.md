@@ -32,10 +32,10 @@ _İçerik özü · yeniden yazım · sahibinden gerçek bilgi gerekir · 4 sayfa
 Metin gövdesinde her 100 kelimeye 0 somut öğe düşüyor (sayı, tarih, fiyat, isim). 3,5'in altı genel geçer okunur.
 
 **Kanıt:**
-- `names found: Kavruk'a`
 - `names found: Kavruk`
+- `names found: Kavruk'a`
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/blog.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`
 
 **Düzeltme:** Genel iddiaları yalnızca bu işletmenin sahip olduğu bilgilerle değiştirin: rakamlar, müşteri isimleri, fiyatlar, tarihler, süreç detayları. Bunları sahibine sorun, asla uydurmayın.
 
@@ -57,8 +57,8 @@ Slop sözlüğünden 12 güçlü ve 2 zayıf eşleşme, 1000 kelimede 43.3 (insa
 - `bir üst seviyeye ×2 · üst seviyeye taşı ×2 · yolculuğunuz ×2 · keşfedin ×2 · günümüzün hızla · hızla değişen dünya · kusursuz bir deneyim · oyunun kurallarını · en son teknoloji · fark yaratan`
 - `Günümüzün hızla değişen dünyasında kahve sadece bir içecek değil, bir yaşam tarzıdır.`
 - `Kavruk, eşsiz lezzetleri kusursuz bir deneyimle buluşturarak kahve yolculuğunuzu bir üst seviyeye taşıyor.`
-- `tutkuyla ×2 · dijital çağın · bir üst seviyeye · üst seviyeye taşı · çığır açan`
-- `Günümüzün dijital çağında, kahve kültürünü yenilikçi teknolojilerle harmanlayarak sektörde çığır açan bir dönüşümün öncüsü olmayı hedefliyo…`
+- `yolculuğunuz ×3 · bir üst seviyeye ×2 · üst seviyeye taşı ×2 · kapsamlı ×2 · günümüzün hızla · hızla değişen dünya · vazgeçilmez bir parçası · vazgeçilmez · sonuç olarak`
+- `Kahve demleme sanatında ustalaşmak için bilmeniz gereken her şey bu kapsamlı rehberde.`
 
 **Konum:**
 - `index.html:31` `Günümüzün hızla değişen dünyasında kahve sadece bir içecek değil, bir yaşam tarzıdır. Kavruk, eşsiz lezzetleri kusursuz bir deneyimle buluşturarak kahve yolculuğunuzu bir üst seviyeye taşıyor.`
@@ -69,7 +69,7 @@ Slop sözlüğünden 12 güçlü ve 2 zayıf eşleşme, 1000 kelimede 43.3 (insa
 - `index.html:73` `Kahve Yolculuğunuza Bugün Başlayın ☕`
 - … +2
 
-**Sayfalar:** `/`, `/hakkimizda.html`, `/blog.html`, `/kahveler.html`, `/iletisim.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/hakkimizda.html`, `/kahveler.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Her ifadeyi silin ya da arkasındaki somut bilgiyle değiştirin. Bir klişeyi eş anlamlısıyla değiştirmeyin.
 
@@ -103,7 +103,7 @@ _Şablon tasarım · yeniden tasarım · 6 sayfada_ · id: `purple-gradient`
 - `assets/style.css:113` `linear-gradient(135deg, #7c3aed, #4f46e5, #db2777)`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Paleti konunun kendisinden türetin (malzemesi, mekânı, dönemi) ve tek bir vurgu rengini az kullanın. Gradyanı yalnızca bir şeyi tasvir ediyorsa kullanın. Gradyanın sadece rengini değiştirmek çözüm değil.
 
@@ -157,12 +157,12 @@ Daktilo efekti, özel imleç, parçacıklar, uçuşan şekiller, meteor ve ış�
 - `index.html:30` `class="typing`
 - `index.html:12` `class="glow-orb"></div><div class="glow…`
 - `assets/app.js:3` `isDeleting`
-- `kahveler.html:12` `class="glow-orb"></div><div class="glow…`
+- `blog.html:12` `class="glow-orb"></div><div class="glow…`
 - `assets/app.js:3` `isDeleting`
-- `hakkimizda.html:12` `class="glow-orb"></div><div class="glow…`
+- `kahveler.html:12` `class="glow-orb"></div><div class="glow…`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Eklemesi kolay olması eklemek için sebep değil. Kaldırın; o emeği gerçek görsellere ya da ürünün tek bir etkileşimli demosuna verin.
 
@@ -193,7 +193,7 @@ Arka plan parlamaları, bulanık lekeler, yanıp sönen rozetler ve buzlu cam ka
 - `assets/style.css:45` `glow 30px`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Efektleri kaldırın. Derinliği düzen, ölçek farkı ve gerçek görsellerle kurun.
 
@@ -254,7 +254,7 @@ _Şablon tasarım · yeniden tasarım · 6 sayfada_ · id: `emoji-icons`
 - `index.html:56` `🔒`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/kahveler.html`, `/blog.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Konuya uygun tek ve tutarlı bir ikon seti kullanın ya da hiç kullanmayın; gerçek fotoğraf veya şema çoğu zaman daha çok şey anlatır.
 
@@ -285,7 +285,7 @@ Tailwind'in varsayılan paletinden doğrudan alınmış 9 renk (slate, purple-50
 - `assets/style.css:63` `#a78bfa`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Konudan (bir fotoğraf, ürün, mekân) 4-6 renk türetin, onlara isim verin ve sadece onları kullanın.
 
@@ -316,7 +316,7 @@ _Özensiz detaylar · hızlı düzeltme · 6 sayfada_ · id: `section-comments`
 - `index.html:71` `CTA Section`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Silin ya da yayın derlemesinde yorumları temizleyin.
 
@@ -346,7 +346,7 @@ _Özensiz detaylar · hızlı düzeltme · sahibinden gerçek bilgi gerekir · 6
 - `index.html:85` `Hediye Kartı`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Her birini gerçek bir sayfaya ya da eyleme bağlayın veya kaldırın.
 
@@ -380,7 +380,7 @@ Inter: AI araçlarının hep aynı yere çıktığı yazı tiplerinden.
 **Kanıt:**
 - `Inter`
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Konunun dünyasına ait yazı tipleri seçin ve nedenini yazın. Bir başlık fontunu bir metin fontuyla eşleştirin ya da tek bir değişken aileyi uç kalınlıklarda kullanın (200 ve 900). Inter uygulama içinde iyidir, açılış sayfasının sesi olarak değil.
 
@@ -392,7 +392,7 @@ Sayfa ziyaretçinin ayarından bağımsız olarak siyaha yakın açılıyor. AI 
 **Kanıt:**
 - `background: var(--bg-color) = #0a0a12`
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** prefers-color-scheme ayarını izleyin ya da koyu temayı yalnızca konu gerektiriyorsa seçin (gece, film, kod). Koyu kalacaksa 3-4 yüzey seviyesi ve 7:1 kontrastlı gövde metni kullanın.
 
@@ -413,7 +413,7 @@ _Şablon tasarım · yeniden tasarım · 6 sayfada_ · id: `motion-everywhere`
 - `assets/style.css:90` `:hover translateY/scale`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Tek bir bilinçli an bırakın (sayfa açılış animasyonu ya da tek etkileşimli demo). İçerik varsayılan olarak görünür olsun; prefers-reduced-motion'a uyun.
 
@@ -427,18 +427,18 @@ _Dil kalıpları · yeniden yazım · 3 sayfada_ · id: `triads`
 - `Çevreye duyarlı, etik ve sürdürülebilir`
 - `fincanda unutulmaz, benzersiz ve kusursuz`
 - `Kalite, hız ve müşteri`
-- `hitap eden, özenle seçilmiş ve ustalıkla`
+- `Taze, özenle seçilmiş ve doğru`
 
 **Konum:**
 - `index.html:52` `Siparişleriniz hızlı, güvenli ve sorunsuz bir şekilde kapınızda.`
 - `index.html:53` `Çevreye duyarlı, etik ve sürdürülebilir kaynaklardan gelen kahveler.`
 - `index.html:55` `Her fincanda unutulmaz, benzersiz ve kusursuz bir lezzet deneyimi.`
 - `index.html:66` `"Harika bir deneyim! Kalite, hız ve müşteri hizmetleri mükemmel. Oyunun kurallarını değiştiriyorlar."`
-- `kahveler.html:31` `Her damak zevkine hitap eden, özenle seçilmiş ve ustalıkla kavrulmuş kahvelerimizi keşfedin. Lezzet, kalite ve tutkunun mükemmel uyumu.`
-- `kahveler.html:37` `Çiçeksi, meyvemsi ve dengeli notalarla eşsiz bir lezzet yolculuğu.`
+- `blog.html:37` `Kaliteli bir kahvenin temeli, şüphesiz ki kaliteli çekirdeklerdir. Taze, özenle seçilmiş ve doğru kavrulmuş çekirdekler, lezzet yolculuğunuzun vazgeçilmez bir parçasıdır.`
+- `blog.html:41` `Kahve ve su arasındaki denge, mükemmel fincanın anahtarıdır. Doğru oranı bulmak, lezzet, aroma ve gövde arasında kusursuz bir uyum yakalamanızı sağlar.`
 - … +2
 
-**Sayfalar:** `/`, `/kahveler.html`, `/blog.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`
 
 **Düzeltme:** En önemli tek özelliği bırakın ve bir örnekle kanıtlayın.
 
@@ -458,7 +458,7 @@ Başlık harfleri gradyanla boyanmış.
 - `assets/style.css:63` `background-clip: text`
 - `assets/style.css:63` `background-clip: text`
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Başlığı karakterli bir yazı tipi ve tek düz renk taşısın.
 
@@ -563,7 +563,7 @@ Ortalanmış başlık ve altında küçük renkli çizgi, her bölümde tekrar: 
 - `assets/style.css:79` `::after`
 - `assets/style.css:79` `::after`
 
-**Sayfalar:** `/`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/blog.html`, `/abonelik.html`
+**Sayfalar:** `/`, `/blog.html`, `/kahveler.html`, `/hakkimizda.html`, `/iletisim.html`, `/abonelik.html`
 
 **Düzeltme:** Bölümleri boşluk ve yazı boyutu ayırsın. Ayırıcı gerekiyorsa sayfa genelinde tek tutarlı bir çizgi kullanın.
 
@@ -621,6 +621,21 @@ Her üretilmiş açılış sayfasında olan 4 kalıp ("Hemen başla", "Kredi kar
 - `-0.3` İsmi ve rolü belli kişi: Özel Harman
 Usta
 - `-1` Hakkımızda / ekip sayfası: Hakkımızda
+
+## AI arama hazırlığı: 4/11 (36)
+ChatGPT, Claude, Perplexity ve Gemini bunu okuyabiliyor, arkasında kimin olduğunu anlayıp alıntılayabiliyor mu? Ayrı bir puan; slop skorunu değiştirmez.
+
+- ✗ **Yapısal veri (JSON-LD)** — 6 sayfanın 0 tanesinde. Kim olduğunuzu söyleyen bir JSON-LD bloğu ekleyin (Organization, LocalBusiness ya da Person); yazılarda yazar ve tarihli Article.
+- ✓ **JavaScript olmadan okunabiliyor** — 6 sayfanın 6 tanesinde
+- ✓ **Başlık ve açıklama** — 6 sayfanın 5 tanesinde
+- ✗ **Link önizlemesi (Open Graph)** — 6 sayfanın 0 tanesinde. og:title, og:description ve og:image ekleyin; paylaşılan linkler ve AI cevapları düzgün bir önizleme göstersin.
+- ✗ **Asıl adres (canonical)** — 6 sayfanın 0 tanesinde. Sayfanın tek asıl adresiyle <link rel="canonical"> ekleyin.
+- ✓ **Tek ana başlık** — 6 sayfanın 6 tanesinde
+- ✗ **Yazar ve tarih** — 5 sayfanın 0 tanesinde. Kimin ne zaman yazdığını gösterin (imza ve <time datetime>); ikisini de Article JSON-LD'ye koyun.
+- ✗ **Alıntılanabilir paragraflar** — 6 sayfanın 1 tanesinde. Sayfanın ana sorusunu tam cümlelerden oluşan düz paragraflarla cevaplayın. Yalnızca başlık ve buton, bir AI'ın alıntılayacağı bir şey bırakmaz.
+- ✓ **AI tarayıcılarına izin var** — robots.txt yok, hepsine izin var
+- ✗ **llms.txt** — yok. /llms.txt ekleyin: sitenin kısa bir Markdown özeti ve önemli sayfalarına linkler (llmstxt.org).
+- ✗ **Site haritası** — yok. /sitemap.xml yayınlayın ve robots.txt'te belirtin.
 
 ## Sonraki adım
 Öncelik sıralı dönüşüm planı için `slop_rescue_plan` aracını `scan_id: "s1"` ile çağırın, sonra değişimi ölçmek için yeniden tarayın.
@@ -681,10 +696,10 @@ En bariz "kimse kontrol etmemiş" işaretlerini kaldıran hızlı, mekanik düze
 - **Anlamlı alt metni olmayan görseller** (`missing-alt`, +1, 2 sayfa) — `index.html:65`, `index.html:66`, `index.html:67`, `hakkimizda.html:50`
   Her görselin ne gösterdiğini yazın; süs görselleri için alt="" kullanın.
   Kanıt: https://i.pravatar.cc/150?img=1 / https://i.pravatar.cc/150?img=3
-- **Eski telif yılı** (`stale-copyright`, +1, 6 sayfa) — `index.html:89`, `kahveler.html:64`, `hakkimizda.html:67`, `iletisim.html:58`
+- **Eski telif yılı** (`stale-copyright`, +1, 6 sayfa) — `index.html:89`, `blog.html:63`, `kahveler.html:64`, `hakkimizda.html:67`
   Güncelleyin ya da yılı otomatik yazdırın.
   Kanıt: © 2023
-- **Varsayılan favicon ya da yer tutucu görsel** (`default-favicon`, +1, 6 sayfa) — `index.html:8`, `kahveler.html:8`, `hakkimizda.html:8`, `iletisim.html:8`
+- **Varsayılan favicon ya da yer tutucu görsel** (`default-favicon`, +1, 6 sayfa) — `index.html:8`, `blog.html:8`, `kahveler.html:8`, `hakkimizda.html:8`
   Marka işaretiyle değiştirin.
   Kanıt: href="/vite.svg"
 - **Eksik sayfa metadatası** (`missing-meta`, +0.5, 5 sayfa)
@@ -696,7 +711,7 @@ Skorun ve okuyucunun yargısının en büyük kısmını içerik ve dil taşır.
 
 - **Somut bilgi az** (`specificity`, +10, 4 sayfa)
   Genel iddiaları yalnızca bu işletmenin sahip olduğu bilgilerle değiştirin: rakamlar, müşteri isimleri, fiyatlar, tarihler, süreç detayları. Bunları sahibine sorun, asla uydurmayın.
-  Kanıt: names found: Kavruk'a / names found: Kavruk
+  Kanıt: names found: Kavruk / names found: Kavruk'a
 - **Klişe ifade yoğunluğu** (`lexicon`, +9, 6 sayfa) — `index.html:31`, `index.html:49`, `index.html:56`, `index.html:63`
   Her ifadeyi silin ya da arkasındaki somut bilgiyle değiştirin. Bir klişeyi eş anlamlısıyla değiştirmeyin.
   Kanıt: bir üst seviyeye ×2 · üst seviyeye taşı ×2 · yolculuğunuz ×2 · keşfedin ×2 · günümüzün hızla · hızla değişen dünya · kusursuz bir deneyim · oyunun kurallarını · en son teknoloji · fark yaratan / Günümüzün hızla değişen dünyasında kahve sadece bir içecek değil, bir yaşam tarzıdır.
@@ -737,7 +752,7 @@ Görsel varsayılanlar, ziyaretçi tek kelime okumadan sayfanın üretildiğini 
 - **Mor-indigo gradyan** (`purple-gradient`, +6, 6 sayfa) — `assets/style.css:23`, `assets/style.css:45`, `assets/style.css:63`, `assets/style.css:79`
   Paleti konunun kendisinden türetin (malzemesi, mekânı, dönemi) ve tek bir vurgu rengini az kullanın. Gradyanı yalnızca bir şeyi tasvir ediyorsa kullanın. Gradyanın sadece rengini değiştirmek çözüm değil.
   Kanıt: radial-gradient(circle, rgba(139, 92, 246, 0.35), transparent 70%) / linear-gradient(135deg, var(--primary), var(--secondary))
-- **Efekt kiti bileşenleri** (`gimmick-effects`, +5, 6 sayfa) — `index.html:30`, `index.html:12`, `assets/app.js:3`, `kahveler.html:12`
+- **Efekt kiti bileşenleri** (`gimmick-effects`, +5, 6 sayfa) — `index.html:30`, `index.html:12`, `assets/app.js:3`, `blog.html:12`
   Eklemesi kolay olması eklemek için sebep değil. Kaldırın; o emeği gerçek görsellere ya da ürünün tek bir etkileşimli demosuna verin.
   Kanıt: typing effect / floating shapes
 - **Parlama, bulanıklık ve cam efekti** (`glow-glass`, +4, 6 sayfa) — `assets/style.css:23`, `assets/style.css:30`, `assets/style.css:34`, `assets/style.css:51`
@@ -786,7 +801,19 @@ Gerçek isimler, ulaşılabilir iletişim ve doğrulanabilir detaylar en güçl�
 - Doğrudan iletişim ekleyin: gerçek bir e-posta ya da bir insana ulaşan iletişim sayfası.
 - İçeriğe tarih koyun ve son güncellemeyi gösterin.
 
-## Aşama 6. Yeniden ölçün
+## Aşama 6. AI aramada okunur hale getirin
+ChatGPT, Claude, Perplexity ve Gemini soruları okuyabildikleri, kime ait olduğunu anlayabildikleri ve alıntılayabildikleri sayfalarla cevaplar. Slop skorunu değiştirmez; AI arama hazırlığı puanını yükseltir.
+
+Şu an 4/11. Eksikler:
+- **Yapısal veri (JSON-LD)** (6 sayfanın 0 tanesinde): Kim olduğunuzu söyleyen bir JSON-LD bloğu ekleyin (Organization, LocalBusiness ya da Person); yazılarda yazar ve tarihli Article.
+- **Link önizlemesi (Open Graph)** (6 sayfanın 0 tanesinde): og:title, og:description ve og:image ekleyin; paylaşılan linkler ve AI cevapları düzgün bir önizleme göstersin.
+- **Asıl adres (canonical)** (6 sayfanın 0 tanesinde): Sayfanın tek asıl adresiyle <link rel="canonical"> ekleyin.
+- **Yazar ve tarih** (5 sayfanın 0 tanesinde): Kimin ne zaman yazdığını gösterin (imza ve <time datetime>); ikisini de Article JSON-LD'ye koyun.
+- **Alıntılanabilir paragraflar** (6 sayfanın 1 tanesinde): Sayfanın ana sorusunu tam cümlelerden oluşan düz paragraflarla cevaplayın. Yalnızca başlık ve buton, bir AI'ın alıntılayacağı bir şey bırakmaz.
+- **llms.txt** (yok): /llms.txt ekleyin: sitenin kısa bir Markdown özeti ve önemli sayfalarına linkler (llmstxt.org).
+- **Site haritası** (yok): /sitemap.xml yayınlayın ve robots.txt'te belirtin.
+
+## Aşama 7. Yeniden ölçün
 Aynı hedefi yeniden tarayın; AI Slop Meter önce/sonra tablosunu ve açık kalan bulguları gösterir.
 
 Aynı hedefle `slop_scan` çağırın (CLI: `npx aislopmeter http://localhost:5801/`). Skor 20 altına inene ya da kalan bulgular yalnızca sahibin bilebileceği bilgiler gerektirene kadar tekrarlayın. Ayrıntılı yöntem: `slop_guide` → playbook, copy, design.

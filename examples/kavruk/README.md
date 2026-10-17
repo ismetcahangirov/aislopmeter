@@ -14,8 +14,9 @@ Altı sayfalı bir kahve kavurma atölyesi sitesi. Önce bir AI site aracının 
 | `/abonelik.html` | 47 | 0 |
 | `/iletisim.html` | 45 | 0 |
 | İçerik özü / Dil / Tasarım / Özensiz detay | 12.9 / 15.4 / 28 / 10.8 | 0 / 0 / 0 / 0 |
+| **AI arama hazırlığı** (ayrı puan) | **36** · 4/11 | **100** · 11/11 |
 
-Ölçüm 0.2.2 ile, Chromium'da, 17 Ekim 2026'da yapıldı.
+Ölçüm 0.3.0 ile, Chromium'da, 17 Ekim 2026'da yapıldı.
 
 ![Önce](img/before.jpg)
 ![Sonra](img/after.jpg)
@@ -28,7 +29,8 @@ Altı sayfalı bir kahve kavurma atölyesi sitesi. Önce bir AI site aracının 
 4. **Metin.** "Bir üst seviyeye taşıyın", "günümüzün hızla değişen dünyasında", "sadece bir içecek değil" gibi her cümle ya sahibinin verdiği bir bilgiyle değiştirildi ya da silindi. 10.000+ / %99 / 7/24 gibi kaynaksız rakamların yerine 312 abone ve "kavrumdan kargoya 24 saat" geldi.
 5. **Tasarım.** Mor gradyan, cam efekti, parlayan butonlar, emoji ikonlar, daktilo efekti, birbirinin aynı kartlar ve varsayılan karanlık tema bırakıldı. Palet ürünün kendisinden: kraft kâğıt paket ve kavrum tarihi damgasının kırmızısı. Kahveler kart değil tablo; ana sayfanın ilk ekranında "bu haftanın kavrumu" defteri var.
 6. **Güven.** İki kişilik ekip isim ve rolleriyle, atölye adresi, açık olduğu saatler, e-posta, şirket unvanı, tarihli ve imzalı bir blog yazısı.
-7. **Tekrar ölçüm.** Site 0'a indi: [sonra-rapor.md](sonra-rapor.md), [rapor/sonra.html](rapor/sonra.html).
+7. **AI arama.** Her sayfaya JSON-LD (kahveci için `CafeOrCoffeeShop`, yazı için `BlogPosting`) ve canonical adres; sitenin köküne `robots.txt`, `sitemap.xml` ve sitenin kısa özetini veren `llms.txt`. Tasarım kararları da [after/DESIGN.md](after/DESIGN.md) dosyasına yazıldı; sonraki her düzenleme bu dosyaya göre ölçülüyor.
+8. **Tekrar ölçüm.** Site 0'a indi: [sonra-rapor.md](sonra-rapor.md), [rapor/sonra.html](rapor/sonra.html).
 
 `after/` sayfalarındaki her bilgi FACTS.md'den geliyor; yapay zekâ hiçbir rakam, isim ya da yorum uydurmadı. Gerçek bir kurtarmada bu fark en önemli kısım: bilgi yoksa metin düzelmez.
 

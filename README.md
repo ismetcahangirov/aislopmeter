@@ -60,13 +60,14 @@ Both pages are in [`examples/novaflow`](examples/novaflow). The "after" page was
 ## What it does
 
 1. **Scans** a whole website, a `localhost` app, a project folder (Next.js, Vite/React, Astro, Vue, Svelte, plain HTML, Markdown content…) or a single `.html` file. For a website it finds the pages through `sitemap.xml` and internal links (respecting `robots.txt`), scans up to 30 by default (`--pages all` for up to 200) and gives **every page its own score and to-do list**. A problem that repeats across pages is shown once, with the list of pages it is on.
-2. **Reads what the page really looks like.** It reads the site's own stylesheets and scripts, and when Chrome or Edge is installed it opens the page and measures it: computed colours and real contrast, the fonts actually rendered, how much is centred, whether cards are truly identical. Without a browser it still works from the HTML and CSS.
-3. **Scores** five areas with more than 60 research-based checks ([criteria and sources](docs/CRITERIA.md)):
+2. **Reads what the page really looks like.** It reads the site's own stylesheets and scripts, and when Chrome or Edge is installed it opens the page and measures it: computed colours and real contrast, the fonts actually rendered, how much is centred, whether cards are truly identical, line length and text size, content that spills out or hides under other elements, errors while the page loads. Without a browser it still works from the HTML and CSS.
+3. **Scores** five areas with more than 80 research-based checks ([criteria and sources](docs/CRITERIA.md)):
    - **Substance:** concrete facts, claims you can check, real proof, a portfolio with actual work in it
    - **Language patterns:** clichés, headline formulas, "not just X, but Y", stock microcopy
-   - **Template design:** purple gradients, glow, emoji and stock icons, the standard landing-page and portfolio templates, Tailwind's default colours, typing effects
-   - **Unfinished details:** lorem ipsum, `href="#"`, "Vite + React + TS", chatbot leftovers, pages that are empty without JavaScript
+   - **Template design:** purple gradients, glow, emoji and stock icons, the standard landing-page and portfolio templates, Tailwind's default colours, grid backgrounds, small caps labels above every heading, bouncing and pulsing motion, cards inside cards, and drift from your own `DESIGN.md`
+   - **Unfinished details:** lorem ipsum, `href="#"`, "Vite + React + TS", chatbot leftovers, pages that are empty without JavaScript, broken images, load errors, text that is too small, too long a line or under another element
    - **Builder traces:** Lovable, Bolt, v0, Replit, Base44 (information only)
+   - Plus a separate **AI search readiness** score: can ChatGPT, Claude, Perplexity and Gemini read the page, tell who is behind it and quote it (JSON-LD, robots.txt for AI crawlers, `llms.txt`, sitemap, readable without JavaScript, quotable paragraphs)
 4. **Tells you what to do about every finding:** a one-line fix, numbered steps, the exact `file:line` places and this site's own sentences, a before/after example, a "done when" check, and a **Copy as a prompt for your AI** button.
 5. **Plans the rescue** around your site: questions for the owner that fit the kind of site (so the AI never invents facts), then clean-up, copy, design and trust, each with an estimated score.
 6. **Shows it** in a visual report with **Report**, **What to do** and, for sites, **Pages** screens, and **re-measures** after each change with a before/after table.

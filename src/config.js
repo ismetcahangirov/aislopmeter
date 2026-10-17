@@ -3,13 +3,14 @@
 //   "disable": ["purple-gradient"],          // check ids that should not count here
 //   "keep": "Our purple logo colour",        // passed to the rescue plan as "do not touch"
 //   "ignore": ["legacy", "docs/old"],        // folder scans: extra paths to skip
-//   "pages": 30, "lang": "tr", "targetScore": 20, "render": "auto"
+//   "pages": 30, "lang": "tr", "targetScore": 20, "render": "auto",
+//   "design": "docs/DESIGN.md"           // the design spec to check against (a folder's DESIGN.md is found by itself)
 // }
 import { readFile, stat } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 
 export const CONFIG_FILE = '.aislopmeter.json';
-const KEYS = ['disable', 'keep', 'ignore', 'pages', 'lang', 'targetScore', 'render', 'failAbove'];
+const KEYS = ['disable', 'keep', 'ignore', 'pages', 'lang', 'targetScore', 'render', 'failAbove', 'design'];
 
 /** Find the config for a target: the target folder (or its parents), else the working directory. */
 export async function loadConfig(target, { cwd = process.cwd() } = {}) {

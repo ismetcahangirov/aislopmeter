@@ -140,6 +140,106 @@ export async function measureVisual() {
     if (/(^|,)\s*rgba?\([^)]*\)\s+0px\s+0px\s+([89]|[1-9]\d)px/.test(s.boxShadow) || /0px 0px ([89]|[1-9]\d)px/.test(s.textShadow)) glows++;
   }
 
+  // ---- layout and typography: what makes text hard to read, or a layout look unfinished ----
+  const px = (v) => parseFloat(v) || 0;
+  const sample = (list, el, extra) => { if (list.length < 4) list.push({ text: label(el).slice(0, 60), ...extra }); };
+  const paras = [...document.querySelectorAll('p, li, dd, blockquote')].filter((el) => {
+    const s = getComputedStyle(el);
+    return visible(el, s) && (el.textContent || '').trim().split(/\s+/).length >= 12 && !el.closest('nav, footer, header, aside, figcaption, small, table, pre, code');
+  }).slice(0, 300);
+  const longLines = [], tinyText = [], tightLeading = [], justified = [];
+  const counts = { longLines: 0, tinyText: 0, tightLeading: 0, justified: 0 };
+  let checkedParas = 0;
+  for (const el of paras) {
+    const s = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    const fs = px(s.fontSize) || 16;
+    const lh = s.lineHeight === 'normal' ? fs * 1.2 : px(s.lineHeight);
+    const chars = (el.textContent || '').replace(/\s+/g, ' ').trim().length;
+    const lines = Math.max(1, Math.round(r.height / (lh || fs * 1.2)));
+    checkedParas++;
+    if (lines >= 2 && chars / lines > 95) { counts.longLines++; sample(longLines, el, { chars: Math.round(chars / lines) }); }
+    if (fs < 14) { counts.tinyText++; sample(tinyText, el, { size: Math.round(fs * 10) / 10 }); }
+    if (lines >= 2 && lh / fs < 1.15) { counts.tightLeading++; sample(tightLeading, el, { ratio: Math.round((lh / fs) * 100) / 100 }); }
+    if (s.textAlign === 'justify') { counts.justified++; sample(justified, el, {}); }
+  }
+
+  // text that touches the edge of the window, boxes that spill out, text hidden under something else
+  const edge = [], spill = [], covered = [], cramped = [], nested = [];
+  let edgeN = 0, spillN = 0, coveredN = 0, crampedN = 0, nestedN = 0;
+  const docW = document.documentElement.scrollWidth;
+  const pageOverflow = docW > vw + 4;
+  for (const { el } of texts.slice(0, 600)) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 20 || r.height < 8 || r.top > vh * 4) continue;
+    const words = (el.textContent || '').trim().split(/\s+/).length;
+    // touching the edge, not clipped by it (slides of a carousel sit partly off screen on purpose)
+    if (words >= 3 && ((r.left >= 0 && r.left < 4) || (r.right <= vw && r.right > vw - 4))) { edgeN++; sample(edge, el, { left: Math.round(r.left) }); }
+    if (r.top >= 0 && r.top < vh && r.width > 40) {
+      const x = Math.min(vw - 1, Math.max(0, r.left + Math.min(r.width / 2, 30))), y = r.top + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      // banners, sticky headers and chat bubbles float over content on purpose
+      const floating = (n) => { for (let e = n; e && e.nodeType === 1; e = e.parentElement) { const p = getComputedStyle(e).position; if (p === 'fixed' || p === 'sticky') return true; } return false; };
+      if (hit && hit !== el && !el.contains(hit) && !hit.contains(el) && !floating(hit) && !floating(el)) {
+        const hs = getComputedStyle(hit);
+        const opaque = (parse(hs.backgroundColor)?.a || 0) > 0.9 || /url\(/.test(hs.backgroundImage) || hit.tagName === 'IMG';
+        if (opaque && hs.pointerEvents !== 'none' && !/^(HTML|BODY)$/.test(hit.tagName)) { coveredN++; sample(covered, el, { by: hit.tagName.toLowerCase() }); }
+      }
+    }
+  }
+  const styledBox = (s) => (parse(s.backgroundColor)?.a || 0) > 0.05 || px(s.borderTopWidth) > 0 || s.boxShadow !== 'none';
+  for (const el of document.querySelectorAll('div, section, article, li, a')) {
+    if (crampedN + nestedN > 400) break;
+    const s = getComputedStyle(el);
+    if (!visible(el, s) || !styledBox(s)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 120 || r.height < 40) continue;
+    if (el.scrollWidth > el.clientWidth + 4 && s.overflowX === 'visible' && (el.textContent || '').trim()) { spillN++; sample(spill, el, { by: el.scrollWidth - el.clientWidth }); }
+    const words = (el.textContent || '').trim().split(/\s+/).length;
+    const pad = Math.min(px(s.paddingLeft), px(s.paddingTop), px(s.paddingRight));
+    if (words >= 4 && words <= 80 && pad < 8 && (parse(s.backgroundColor)?.a || 0) > 0.05 && el.children.length) { crampedN++; sample(cramped, el, { pad: Math.round(pad) }); }
+    // a card inside a card: both styled, both card-sized
+    const outer = el.parentElement && el.parentElement.closest('div, section, article, li');
+    if (outer && r.width < outer.getBoundingClientRect().width - 16) {
+      const os = getComputedStyle(outer);
+      const cardish = (x) => px(x.borderTopLeftRadius) >= 8 && (px(x.borderTopWidth) > 0 || x.boxShadow !== 'none') && (parse(x.backgroundColor)?.a || 0) > 0.02;
+      if (cardish(s) && cardish(os) && outer.getBoundingClientRect().height < vh * 1.5) { nestedN++; sample(nested, el, {}); }
+    }
+  }
+
+  // type hierarchy: how much bigger the headings are than the body
+  // the largest heading of each level against the typical (median) paragraph size
+  const sizeOf = (sel) => { const v = [...document.querySelectorAll(sel)].filter((el) => visible(el, getComputedStyle(el))).map((el) => px(getComputedStyle(el).fontSize)); return v.length ? Math.max(...v) : null; };
+  const pSizes = (paras.length ? paras : [...document.querySelectorAll('p')]).map((el) => px(getComputedStyle(el).fontSize)).filter(Boolean).sort((a, b) => a - b);
+  const bodySize = pSizes.length ? pSizes[Math.floor(pSizes.length / 2)] : px(getComputedStyle(document.body).fontSize) || 16;
+  const hierarchy = { body: bodySize, h1: sizeOf('h1'), h2: sizeOf('h2'), h3: sizeOf('h3') };
+
+  // ---- template signs measured on screen ----
+  let gridBg = 0, hairline = 0, eyebrows = 0, numbered = 0, pulsingDots = 0, marquees = 0;
+  const eyebrowSamples = [];
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+    const s = getComputedStyle(el);
+    if (s.display === 'none') continue;
+    const r = el.getBoundingClientRect();
+    if (/(?:1px|0\.5px|2px),\s*transparent|transparent\s+(?:1px|0\.5px|2px)/.test(s.backgroundImage) && r.width * r.height > vw * vh * 0.15) gridBg++;
+    if (px(s.borderTopWidth) === 1 && /(?:\s|^)(?:[3-9]\d|\d{3})px/.test((s.boxShadow.match(/\)\s*(?:-?\d+px\s+){2}(\d+px)/) || [])[0] || '') && r.width > 120) hairline++;
+    if (s.animationName && s.animationName !== 'none' && r.width > 0 && r.width <= 16 && r.height <= 16 && px(s.borderTopLeftRadius) >= r.width / 2 - 1) pulsingDots++;
+    if (s.animationName && s.animationName !== 'none' && s.animationIterationCount === 'infinite' && r.width > vw * 0.9 && el.children.length >= 4) marquees++;
+  }
+  for (const h of document.querySelectorAll('h1, h2')) {
+    const prev = h.previousElementSibling;
+    if (!prev) continue;
+    const s = getComputedStyle(prev);
+    const t = (prev.textContent || '').trim();
+    if (!t || t.split(/\s+/).length > 6 || !visible(prev, s)) continue;
+    if (/^(?:0?\d{1,2}|[IVX]+)(?:\s*[.\/—–-]|\s*$)/.test(t)) numbered++;
+    if ((s.textTransform === 'uppercase' || px(s.letterSpacing) >= 1) && px(s.fontSize) <= 15) { eyebrows++; if (eyebrowSamples.length < 4) eyebrowSamples.push(t.slice(0, 40)); }
+  }
+  // only the site's own images: a blocked third-party host or a local file preview is not a broken page
+  const ownImage = (src) => { try { const u = new URL(src, location.href); return /^https?:$/.test(location.protocol) && u.origin === location.origin; } catch { return false; } };
+  const brokenImages = [...document.images].filter((im) => im.complete && im.naturalWidth === 0 && ownImage(im.currentSrc || im.src) && visible(im, getComputedStyle(im))).slice(0, 20).map((im) => (im.currentSrc || im.src).slice(0, 120));
+
   return {
     v: 1,
     viewport: [vw, vh],
@@ -153,5 +253,20 @@ export async function measureVisual() {
     radius: { big: bigRadius, boxes },
     glows,
     darkScheme: window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false,
+    layout: {
+      paragraphs: checkedParas,
+      longLines: { n: counts.longLines, samples: longLines },
+      tinyText: { n: counts.tinyText, samples: tinyText },
+      tightLeading: { n: counts.tightLeading, samples: tightLeading },
+      justified: { n: counts.justified, samples: justified },
+      edge: { n: edgeN, samples: edge },
+      spill: { n: spillN, samples: spill, page: pageOverflow, pageWidth: docW },
+      covered: { n: coveredN, samples: covered },
+      cramped: { n: crampedN, samples: cramped },
+      nested: { n: nestedN, samples: nested },
+      hierarchy,
+    },
+    signs: { gridBg, hairline, eyebrows, eyebrowSamples, numbered, pulsingDots, marquees },
+    brokenImages,
   };
 }

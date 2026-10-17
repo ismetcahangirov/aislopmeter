@@ -121,6 +121,51 @@ New in this version (language and finish):
 | `no-work-shown` (substance) | A portfolio template with no project images and no project or code links. | hustletoai ("no human surfaces"). |
 | `client-shell` (unfinished) | The server sent an empty `#root` shell; the words only appear after JavaScript runs. | Slopdar; hustletoai (SEO). |
 
+### Added in 0.3: template signs, motion, layout, page health, DESIGN.md
+
+Where it says "browser", the check is measured in Chrome, Edge or Chromium at 1366×900; without a browser it falls back to the HTML and CSS, or is skipped.
+
+| Check | Area | How it is detected | Notes and sources |
+|---|---|---|---|
+| `grid-background` | design | A faint 1px grid or dot pattern (`linear/radial-gradient(… 1px, transparent 1px)` with `background-size`, `bg-grid`, `bg-dot`), or a patterned area over 15% of the screen (browser). | Impeccable catalog ("decorative grid-line background"). |
+| `hairline-shadow` | design | 3+ boxes with a 1px translucent border and a box-shadow blurred 30px or more (`border-white/10 shadow-2xl`). | Impeccable ("hairline border with wide shadow"). |
+| `eyebrow-labels` | design | 3+ small uppercase, letter-spaced labels directly above headings, or 2+ sections numbered "01 / 02". | Impeccable ("label above a heading", "tiny numbered section labels"). |
+| `giant-hero` | design | The h1 is 88px or more at 1366px (browser), or `text-7xl` and up. | Impeccable ("oversized hero headline"). |
+| `motion-tells` | design | One point each for: overshooting easing (2+ `cubic-bezier` with y outside 0–1, spring, back, elastic, `animate-bounce`), a pulsing dot (`animate-ping`), a marquee, animating width/height/top/left/margin (max-height accordions are fine). Up to +3. | Impeccable motion rules. |
+| `nested-cards` | design, browser | 2+ rounded, bordered or shadowed cards inside another such card. | Impeccable ("nested cards"). |
+| `flat-hierarchy` | design, browser | The h1 under 1.6× the typical paragraph size, or under 2× with the largest h2 under 1.15×. | Impeccable ("flat type hierarchy"). |
+| `long-lines` | finish, browser | 2+ paragraphs (30% or more of them) over 95 characters a line. | Readability: 45–75 characters (Bringhurst; WCAG 1.4.8). |
+| `tiny-text` | finish | Paragraphs below 14px (browser), or body/p font-size under 14px in CSS. | Impeccable; WCAG 1.4.4. |
+| `tight-leading` | finish | Paragraph line-height under 1.15 (browser, or unitless in CSS). The browser default ("normal", about 1.2) does not count. | WCAG 1.4.12 suggests 1.5. |
+| `justified-text` | finish | 2+ justified paragraphs. | Impeccable; WCAG 1.4.8. |
+| `overflow` | finish, browser | The page scrolls sideways at 1366px, or 2+ boxes wider inside than out. | Impeccable ("content overflowing its container"). |
+| `text-covered` | finish, browser | 2+ pieces of text under an opaque element on the first screens. Fixed and sticky elements (banners, headers, chat bubbles) are ignored. | Impeccable ("text covered by another element"). |
+| `edge-text` | finish, browser | 3+ text blocks within 4px of the window edge; slides clipped by the edge do not count. | Impeccable ("body text touching the page edge"). |
+| `cramped` | finish, browser | 3+ filled boxes with text and under 8px of padding. | Impeccable ("cramped padding"). |
+| `js-errors` | finish, browser | Errors thrown while the page loads (CLI and MCP; the bookmarklet cannot see them). | Impeccable ("JavaScript errors on load"). |
+| `broken-images` | finish | The site's own images that do not load (browser; third-party hosts and local file previews are ignored), or `<img src="">`. | Impeccable ("broken image"). |
+| `design-drift` | design | Only with a DESIGN.md (found in the scanned folder, or set with `"design"` in `.aislopmeter.json`): colours, fonts and px radii in the stylesheets that the file does not list. Black, white, `var()` and generic families are ignored. | slop-detect and Impeccable ("outside DESIGN.md"). |
+
+## AI search readiness
+
+A separate score, 0 to 100: the share of these checks that pass. It is shown under the slop score and never changes it.
+
+| Check | Passes when | Source |
+|---|---|---|
+| `structured-data` | A JSON-LD block with an identity type (Organization, LocalBusiness, Person, WebSite, Product…) or an article type (Article, BlogPosting, FAQPage…), and no block with invalid JSON. | schema.org; Google structured data guidelines. |
+| `readable-without-js` | The text is in the HTML the server sends (not an empty `#root`). | Most AI crawlers do not run JavaScript (Vercel, 2024; OpenAI and Anthropic crawler docs). |
+| `title-description` | A title and a meta description of 30+ characters. | Google Search Central. |
+| `open-graph` | og:title, og:description or og:image. | Open Graph protocol. |
+| `canonical` | `<link rel="canonical">` (or `alternates.canonical` in Next.js). | Google Search Central. |
+| `one-h1` | Exactly one h1. | |
+| `author-date` | On articles: a `<time datetime>`, `datePublished`, an author meta or JSON-LD author. Skipped on other pages. | Google helpful-content guidance ("who, how, why"). |
+| `citable-text` | 2+ paragraphs of 20+ words. | Generative engine optimisation research (Aggarwal et al., 2024): quotable statements and statistics are cited more. |
+| `ai-crawlers` | robots.txt does not block AI search and assistant crawlers (OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Google-Extended, Applebot-Extended). Blocking training crawlers (GPTBot, ClaudeBot, CCBot) is fine. | Each operator's crawler documentation. |
+| `llms-txt` | `/llms.txt` exists and is text, not the HTML fallback a single-page app returns for every path. | llmstxt.org proposal (2024). |
+| `sitemap` | `/sitemap.xml` (or the one robots.txt names) is a real sitemap; in folders, a sitemap file or a sitemap generator. | sitemaps.org. |
+
+For a site, a page check passes when at least half the pages pass it.
+
 ## Builder traces
 
 Lovable markers:

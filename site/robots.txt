@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aislopmeter.netlify.app/sitemap.xml

@@ -1,0 +1,16 @@
+# AI Slop Meter
+
+> Open-source MCP server, CLI and bookmarklet that scores how much "AI slop" a website, a local app or a web project has (0-100), shows the evidence down to file and line, and gives step-by-step fixes your own AI (Claude, Cursor, Gemini CLI) can carry out. It also gives an AI search readiness score. Rule-based, runs on your computer, free, MIT license.
+
+- Install for Claude Code: `claude mcp add --scope user aislopmeter -- npx -y aislopmeter mcp`
+- Try without installing: `npx -y aislopmeter https://your-site.com --open`
+- English and Turkish reports.
+
+## Docs
+
+- [README](https://github.com/omergocmen/aislopmeter#readme): what it does, install, CLI, MCP tools
+- [Usage guide](https://github.com/omergocmen/aislopmeter/blob/main/docs/USAGE.md): the order to work in, every command, recipes, troubleshooting
+- [Kullanım kılavuzu (Türkçe)](https://github.com/omergocmen/aislopmeter/blob/main/docs/KULLANIM.md)
+- [Criteria](https://github.com/omergocmen/aislopmeter/blob/main/docs/CRITERIA.md): every check, its threshold and sources
+- [Calibration](https://github.com/omergocmen/aislopmeter/blob/main/docs/CALIBRATION.md): how the scores were tested on real sites
+- [npm package](https://www.npmjs.com/package/aislopmeter)

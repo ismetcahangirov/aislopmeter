@@ -37,6 +37,11 @@ const PHASES = [
     why: t('Real names, a way to reach you and verifiable details are the strongest anti-slop signal and lower the score.', 'Gerçek isimler, ulaşılabilir iletişim ve doğrulanabilir detaylar en güçlü anti-slop işaretidir ve skoru düşürür.'),
   },
   {
+    key: 'aeo',
+    title: t('Make it readable for AI search', 'AI aramada okunur hale getirin'),
+    why: t('ChatGPT, Claude, Perplexity and Gemini answer questions with pages they can read, place and quote. This does not change the slop score; it is the AI search readiness score.', 'ChatGPT, Claude, Perplexity ve Gemini soruları okuyabildikleri, kime ait olduğunu anlayabildikleri ve alıntılayabildikleri sayfalarla cevaplar. Slop skorunu değiştirmez; AI arama hazırlığı puanını yükseltir.'),
+  },
+  {
     key: 'verify',
     title: t('Measure again', 'Yeniden ölçün'),
     why: t('Re-scan the same target; AI Slop Meter prints a before/after table and the findings still open.', 'Aynı hedefi yeniden tarayın; AI Slop Meter önce/sonra tablosunu ve açık kalan bulguları gösterir.'),
@@ -129,9 +134,11 @@ export function buildRescuePlan(r, { keep = r.config?.keep || '', targetScore = 
   const strengths = new Set(r.findings.filter((f) => f.kind === 'strength').map((f) => f.id.replace('strength-', '')));
   const missing = INTERVIEW.trustItems.filter((x) => !strengths.has(x.id) && (!x.types || x.types.includes(type)));
   if (missing.length && r.kind !== 'project-component') phases.push({ ...PHASES[4], trust: missing, steps: [], gain: 0, scoreAfter: score });
-  phases.push({ ...PHASES[5], gain: 0, scoreAfter: score });
+  const aeoMissing = (r.aeo?.checks || []).filter((c) => !c.ok);
+  if (aeoMissing.length) phases.push({ ...PHASES.find((p) => p.key === 'aeo'), aeo: aeoMissing, steps: [], gain: 0, scoreAfter: score });
+  phases.push({ ...PHASES.find((p) => p.key === 'verify'), gain: 0, scoreAfter: score });
 
-  return { scanId: r.id, target: r.target, kind: r.kind, total: r.total, band: r.band, pageType: type, keep, targetScore, estimate: score, phases, rules: RULES };
+  return { scanId: r.id, target: r.target, kind: r.kind, total: r.total, band: r.band, pageType: type, keep, targetScore, estimate: score, phases, rules: RULES, aeo: r.aeo ? { score: r.aeo.score, passed: r.aeo.passed, total: r.aeo.total } : null };
 }
 
 export function renderRescuePlan(plan, { lang = 'en' } = {}) {
@@ -172,6 +179,10 @@ export function renderRescuePlan(plan, { lang = 'en' } = {}) {
     if (ph.trust?.length) {
       out.push('');
       ph.trust.forEach((x) => out.push(`- ${pick(x.text, lang)}`));
+    }
+    if (ph.aeo?.length) {
+      out.push(tr ? `\nŞu an ${plan.aeo.passed}/${plan.aeo.total}. Eksikler:` : `\nNow ${plan.aeo.passed}/${plan.aeo.total}. Missing:`);
+      ph.aeo.forEach((c) => out.push(`- **${pick(c.label, lang)}** (${pick(c.detail, lang)}): ${pick(c.fix, lang)}`));
     }
     if (ph.key === 'verify') {
       out.push(tr

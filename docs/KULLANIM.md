@@ -85,6 +85,8 @@ Görsel raporda üç ekran var:
 - **Ne yapmalı:** kontrol listesi, tahmini süreler, sahibine sorulacak sorular.
 - **Sayfalar** (site taramasında): her sayfanın puanı, en kötüsü en üstte.
 
+Raporun altında ayrıca **AI arama hazırlığı** puanı var (0-100). ChatGPT, Claude, Perplexity ve Gemini sayfayı okuyabiliyor mu, kimin olduğunu anlayabiliyor mu, alıntılayabiliyor mu diye 11 maddeye bakar: JSON-LD yapısal veri, JavaScript olmadan okunabilirlik, başlık ve açıklama, Open Graph, canonical, tek h1, yazar ve tarih, alıntılanabilir paragraflar, robots.txt'nin AI arama tarayıcılarına açık olması, `llms.txt` ve site haritası. Slop skorunu değiştirmez; eksikler kurtarma planında ayrı bir aşama olarak çıkar.
+
 Her bulgunun yanında **"Prompt olarak kopyala"** düğmesi var: o tek sorunu düzeltmek için yapay zekâna yapıştırabileceğin hazır metin.
 
 ### Adım 4: Düzelt
@@ -138,6 +140,8 @@ Bunları olduğu gibi yazabilirsin. Türkçe yazarsan rapor Türkçe gelir.
 | Görsel rapor | `Raporu tarayıcımda aç.` |
 | Kuralları öğrenmek | `AI Slop Meter neye göre puan veriyor? Kriterleri göster.` |
 | Yapıştırdığın HTML | `Şu HTML'i slop açısından tara: <html>…` |
+| AI arama | `ChatGPT ve Claude sitemi okuyabiliyor mu? AI arama hazırlığını göster ve eksikleri tamamla.` |
+| Tasarım sistemi | `Bu projede DESIGN.md var; dışına çıkan renk, font ve köşeleri bul, düzelt.` |
 
 **Hazır komutlar.** İki hazır prompt var; Claude Code'da `/` yazınca görünür:
 - `/mcp__aislopmeter__rescue`: tarar, soruları sorar, planı uygular, hedef puana kadar tekrar ölçer.
@@ -301,7 +305,8 @@ Projenin köküne (ya da komutu çalıştırdığın klasöre) `.aislopmeter.jso
   "lang": "tr",
   "pages": 30,
   "targetScore": 20,
-  "failAbove": 40
+  "failAbove": 40,
+  "design": "docs/DESIGN.md"
 }
 ```
 
@@ -315,6 +320,9 @@ Projenin köküne (ya da komutu çalıştırdığın klasöre) `.aislopmeter.jso
 | `targetScore` | Kurtarma planının hedefi |
 | `render` | `auto`, `always` ya da `never` |
 | `failAbove` | CLI ve Action için limit |
+| `design` | Karşılaştırılacak tasarım dosyası. Klasör taramasında kökteki ya da `docs/` içindeki `DESIGN.md` kendiliğinden bulunur; site taramasında burada belirt |
+
+**DESIGN.md.** Projende renkleri, yazı tiplerini ve köşe yarıçaplarını yazdığın bir `DESIGN.md` varsa, araç stil dosyalarında bu listenin dışına çıkan değerleri `design-drift` bulgusu olarak gösterir. Biçim serbest: renkler hex kodu olarak, yazı tipleri tırnak içinde, yarıçaplar px olarak yazılsın yeter. Örnek: [examples/kavruk/after/DESIGN.md](../examples/kavruk/after/DESIGN.md).
 
 Rapor, hangi kontrollerin kapatıldığını yazar. `--no-config` dosyayı yok sayar.
 

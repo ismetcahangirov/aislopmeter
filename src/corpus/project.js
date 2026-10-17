@@ -16,7 +16,7 @@ const IGNORE_DIRS = new Set(['node_modules', '.git', '.next', '.nuxt', '.output'
 // Build output, tests and repo documentation: skipped only at the top of the scanned folder,
 // so a route like app/build/page.tsx is still read. Scan such a folder directly to include it.
 const ROOT_ONLY_DIRS = new Set(['dist', 'build', 'out', 'target', 'test', 'tests', 'e2e', 'docs', 'examples', 'example']);
-const REPO_DOCS = /^(?:README|CHANGELOG|CONTRIBUTING|LICENSE|CODE_OF_CONDUCT|SECURITY|HISTORY|AUTHORS)(?:\.[\w.-]+)?$/i;
+const REPO_DOCS = /^(?:README|CHANGELOG|CONTRIBUTING|LICENSE|CODE_OF_CONDUCT|SECURITY|HISTORY|AUTHORS|DESIGN|AGENTS|CLAUDE|GEMINI)(?:\.[\w.-]+)?$/i;
 const IGNORE_FILE = /(?:\.min\.|\.d\.ts$|\.test\.|\.spec\.|\.stories\.|package-lock\.json$|pnpm-lock|yarn\.lock|tsconfig.*\.json$|\.eslintrc|components\.json$|manifest\.json$)/;
 // shadcn/ui primitives are library code the owner rarely touched; skip them by default.
 const UI_PRIMITIVES = /(?:^|[\\/])components[\\/]ui[\\/]/;
@@ -126,7 +126,9 @@ function extractFile(rel, ext, src, C) {
   // class lists
   const seenClassIdx = new Set();
   for (const m of src.matchAll(/\b(?:class|className|:class|tw)\s*=\s*\{?\s*(["'`])([^"'`]*?)\1/g)) {
-    C.classes.push({ value: m[2], loc: loc(m.index) });
+    const open = src.slice(Math.max(0, m.index - 300), m.index);
+    const tag = ((open.match(/<([a-zA-Z][\w.]*)[^<>]*$/) || [])[1] || '').toLowerCase();
+    C.classes.push({ value: m[2], loc: loc(m.index), tag });
     seenClassIdx.add(m.index + m[0].indexOf(m[2]));
   }
   if (isScript) {

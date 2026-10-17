@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Layout problems</title>
+<style>
+body{margin:0;font:12px/1.05 Georgia,serif}
+.wide{width:1800px;background:#eee}
+p{max-width:none}
+.box{background:#f3e3e3;padding:2px;margin:10px 0;width:400px}
+.card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:20px;margin:16px}
+.cover{position:relative}
+.cover img{position:absolute;left:0;top:0;width:600px;height:80px;background:#333}
+h1{font-size:14px} h2{font-size:12.5px}
+</style></head>
+<body>
+<h1>Our things</h1>
+<p>Edge text. This paragraph sits right on the left edge of the window and is set very small with very tight lines, and it is long enough to wrap across many lines of text on a typical desktop screen width so it gets measured as a paragraph of prose.</p>
+<p>Another long paragraph so the measurements see more than one: the lines run far past any comfortable measure because nothing limits the width of the column at all, and the font is twelve pixels with almost no leading between the lines of text.</p>
+<div class="box"><p>Boxed text that presses against the edge of its coloured box with two pixels of padding only.</p></div>
+<div class="box"><p>Second box with the same lack of padding around its words, cramped and hard to read here.</p></div>
+<div class="box"><p>Third box, also cramped, also coloured, so the check has enough to count as a pattern.</p></div>
+<div class="card"><h2>Outer</h2><div class="card"><p>Inner card one with a few words in it.</p></div><div class="card"><p>Inner card two with a few words too.</p></div></div>
+<div class="cover"><p>This text is covered by the image placed on top of it, at least partly hidden.</p><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></div>
+<div class="cover"><p>This second text block is also covered by an absolutely positioned image above.</p><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></div>
+<div class="wide">A block wider than the screen.</div>
+<script>window.addEventListener('load',()=>{ null.boom(); });</script>
+</body></html>

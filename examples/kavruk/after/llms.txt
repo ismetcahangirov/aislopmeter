@@ -1,0 +1,13 @@
+# Kavruk
+
+> Odunpazarı, Eskişehir'de 2021'den beri filtre kahve kavuran küçük bir atölye. Salı ve cuma günleri en fazla 5 kg'lık partilerle kavuruyor, her paketin üstüne kavrum tarihini damgalıyor ve kavrumdan sonraki 24 saat içinde kargoya veriyor.
+
+- Abonelik: ayda bir 250 g 450 TL, iki haftada bir 250 g aylık 860 TL; kargo dahil.
+- İletişim: merhaba@kavruk.coffee. Atölye cumartesi 11:00-16:00 açık.
+
+## Sayfalar
+
+- [Kahveler](https://kavruk.coffee/kahveler.html): şu an kavrulan dört tek köken ve bir harman, fiyatları ve tat notları
+- [Abonelik](https://kavruk.coffee/abonelik.html): iki plan ve sık sorulan sorular
+- [Biz kimiz](https://kavruk.coffee/hakkimizda.html): Selin Aydemir ve Emre Tunç, atölye adresi
+- [Kavrumdan sonra kaç gün beklemeli?](https://kavruk.coffee/blog.html): aynı kahveyi beş farklı günde demleyen deneme

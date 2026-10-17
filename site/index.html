@@ -15,6 +15,7 @@
 <meta property="og:image" content="https://aislopmeter.netlify.app/img/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "AI Slop Meter", "applicationCategory": "DeveloperApplication", "operatingSystem": "Windows, macOS, Linux", "url": "https://aislopmeter.netlify.app/", "downloadUrl": "https://www.npmjs.com/package/aislopmeter", "codeRepository": "https://github.com/omergocmen/aislopmeter", "license": "https://opensource.org/licenses/MIT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "author": {"@type": "Person", "name": "Ömer Göçmen", "url": "https://github.com/omergocmen"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
@@ -286,8 +287,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
 <section class="wrap" aria-labelledby="measures-h">
   <div class="sec-head">
     <h2 id="measures-h"><span lang="en">Where the 100 points come from</span><span lang="tr">100 puan nereden geliyor</span></h2>
-    <p lang="en">More than 60 checks, each written from published research and design reviews, each with the evidence it found. It reads your stylesheets and scripts too. A page needs problems in several areas to score high, so a purple brand colour alone is never "slop".</p>
-    <p lang="tr">60'tan fazla kontrol var. Her biri yayımlanmış araştırmalardan ve tasarım incelemelerinden çıkarıldı, her biri bulduğu kanıtı gösteriyor. Stil ve script dosyalarını da okur. Yüksek skor için birden fazla alanda sorun olmalı; yani sadece mor bir marka rengi asla "slop" sayılmaz.</p>
+    <p lang="en">More than 80 checks, each written from published research and design reviews, each with the evidence it found. It reads your stylesheets and scripts too. A page needs problems in several areas to score high, so a purple brand colour alone is never "slop".</p>
+    <p lang="tr">80'den fazla kontrol var. Her biri yayımlanmış araştırmalardan ve tasarım incelemelerinden çıkarıldı, her biri bulduğu kanıtı gösteriyor. Stil ve script dosyalarını da okur. Yüksek skor için birden fazla alanda sorun olmalı; yani sadece mor bir marka rengi asla "slop" sayılmaz.</p>
   </div>
   <div class="points" aria-hidden="true">
     <i style="width:30%;background:#ad2357"></i><i style="width:22%;background:#c84a76"></i><i style="width:28%;background:#3b4d55"></i><i style="width:15%;background:#6c8087"></i><i style="width:5%;background:#a3b3b5"></i>
@@ -324,6 +325,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-bet
       <p lang="tr">Lovable, Bolt, v0, Replit ve Base44 geride iz bırakır. Bilgi olarak gösterilir: bir araç kullanmak tek başına slop değildir.</p>
     </li>
   </ul>
+  <p class="fine" lang="en">Next to the slop score you also get an <b>AI search readiness</b> score: can ChatGPT, Claude, Perplexity and Gemini read the page, tell who is behind it and quote it? It checks structured data, robots.txt for AI crawlers, <code>llms.txt</code>, the sitemap and whether the text is there without JavaScript.</p>
+  <p class="fine" lang="tr">Slop skorunun yanında bir de <b>AI arama hazırlığı</b> puanı var: ChatGPT, Claude, Perplexity ve Gemini sayfayı okuyabiliyor, arkasında kimin olduğunu anlayıp alıntılayabiliyor mu? Yapısal veriye, AI tarayıcıları için robots.txt'ye, <code>llms.txt</code> dosyasına, site haritasına ve metnin JavaScript olmadan da orada olup olmadığına bakar.</p>
   <p class="fine" lang="en">Real addresses, named people, prices, legal details and links to independent reviews lower the score. The full list with sources is in <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/CRITERIA.md">docs/CRITERIA.md</a>.</p>
   <p class="fine" lang="tr">Gerçek adres, isimli kişiler, fiyatlar, yasal bilgiler ve bağımsız yorum linkleri skoru düşürür. Kaynaklarıyla tam liste <a href="https://github.com/omergocmen/aislopmeter/blob/main/docs/CRITERIA.md">docs/CRITERIA.md</a> dosyasında.</p>
 </section>
@@ -479,8 +482,8 @@ npx -y aislopmeter . --plan</code></pre>
 
 <footer>
   <div class="wrap">
-    <span lang="en">Made by <a href="https://omergocmen.netlify.app">Ömer Göçmen</a> (<a href="https://github.com/omergocmen">@omergocmen</a>). Free and open source, MIT license. Version 0.2.3, updated 17 October 2026. This page scores 3 (clean) on its own meter.</span>
-    <span lang="tr"><a href="https://omergocmen.netlify.app">Ömer Göçmen</a> (<a href="https://github.com/omergocmen">@omergocmen</a>) yaptı. Ücretsiz ve açık kaynak, MIT lisansı. Sürüm 0.2.3, 17 Ekim 2026'da güncellendi. Bu sayfa kendi ölçerinde 3 alıyor (temiz).</span>
+    <span lang="en">Made by <a href="https://omergocmen.netlify.app">Ömer Göçmen</a> (<a href="https://github.com/omergocmen">@omergocmen</a>). Free and open source, MIT license. Version 0.3.0, updated 17 October 2026. This page scores 3 (clean) on its own meter.</span>
+    <span lang="tr"><a href="https://omergocmen.netlify.app">Ömer Göçmen</a> (<a href="https://github.com/omergocmen">@omergocmen</a>) yaptı. Ücretsiz ve açık kaynak, MIT lisansı. Sürüm 0.3.0, 17 Ekim 2026'da güncellendi. Bu sayfa kendi ölçerinde 3 alıyor (temiz).</span>
     <span lang="en">A wrong score or a question? <a href="https://github.com/omergocmen/aislopmeter/issues">Open an issue</a>, it reaches me directly.</span>
     <span lang="tr">Yanlış bir skor ya da soru mu var? <a href="https://github.com/omergocmen/aislopmeter/issues">Issue aç</a>, doğrudan bana gelir.</span>
   </div>

@@ -24,6 +24,7 @@ const UI = {
     strengths: 'Already working for you', strengthsNote: 'These lower the score.', builder: 'Builder traces', builderNote: 'Information only: using a tool is not slop on its own.',
     evidence: 'Evidence', where: 'Where', fix: 'How to fix', points: 'points', none: 'Nothing here.',
     notes: 'Notes', history: 'Progress',
+    aeo: 'AI search readiness', aeoNote: 'Can ChatGPT, Claude, Perplexity and Gemini read this page, tell who is behind it and quote it? A separate score: it does not change the slop score.',
     planLead: (now, est, target) => `You are at <b>${now}</b>. Finishing this plan should bring you to about <b>${est}</b>. The goal is <b>${target}</b> or lower.`,
     calm: 'You do not have to do it all at once. Start with step 1 and the quick wins; each step stands on its own, and you can re-scan after any of them.',
     stepTime: (m) => `about ${m} min`, stepGain: (g) => `−${g} points`, items: (n) => `${n} item${n === 1 ? '' : 's'}`,
@@ -49,6 +50,7 @@ const UI = {
     strengths: 'Şimdiden işe yarayanlar', strengthsNote: 'Bunlar skoru düşürür.', builder: 'Üretici izleri', builderNote: 'Sadece bilgi: bir araç kullanmak tek başına slop değildir.',
     evidence: 'Kanıt', where: 'Konum', fix: 'Nasıl düzeltilir', points: 'puan', none: 'Burada bir şey yok.',
     notes: 'Notlar', history: 'İlerleme',
+    aeo: 'AI arama hazırlığı', aeoNote: 'ChatGPT, Claude, Perplexity ve Gemini bu sayfayı okuyabiliyor, arkasında kimin olduğunu anlayıp alıntılayabiliyor mu? Ayrı bir puan: slop skorunu değiştirmez.',
     planLead: (now, est, target) => `Şu an <b>${now}</b>. Bu plan bitince yaklaşık <b>${est}</b> olması bekleniyor. Hedef <b>${target}</b> ya da altı.`,
     calm: 'Hepsini bir kerede yapmak zorunda değilsiniz. 1. adımla ve hızlı kazanımlarla başlayın; her adım kendi başına iş görür ve herhangi birinden sonra yeniden tarayabilirsiniz.',
     stepTime: (m) => `yaklaşık ${m} dk`, stepGain: (g) => `−${g} puan`, items: (n) => `${n} madde`,
@@ -206,7 +208,7 @@ export function renderHtml(scan, { lang = 'en', plan = null, history = [], targe
   };
   const phaseHtml = plan.phases.map((ph, i) => {
     const steps = ph.steps || [];
-    const minutes = ph.key === 'facts' ? 10 : ph.key === 'verify' ? 2 : ph.key === 'trust' ? 15 : steps.reduce((a, f) => a + (MINUTES[f.effort] || 10), 0);
+    const minutes = ph.key === 'facts' ? 10 : ph.key === 'verify' ? 2 : ph.key === 'trust' ? 15 : ph.key === 'aeo' ? 5 * (ph.aeo?.length || 1) : steps.reduce((a, f) => a + (MINUTES[f.effort] || 10), 0);
     const meta = [U.stepTime(minutes), ph.gain ? U.stepGain(ph.gain) : null, steps.length ? U.items(steps.length) : null].filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('');
     let body = '';
     if (ph.questions?.length) {
@@ -221,6 +223,7 @@ export function renderHtml(scan, { lang = 'en', plan = null, history = [], targe
     }
     if (ph.extra?.length) body += `<details class="more"><summary>${U.howTo}</summary><ul class="method">${ph.extra.map((x) => `<li>${esc(pick(x, lang))}</li>`).join('')}</ul></details>`;
     if (ph.trust?.length) body += `<ul class="todo">${ph.trust.map((x) => `<li><label><input type="checkbox" data-id="trust-${esc(x.id)}"><span>${esc(pick(x.text, lang))}</span></label></li>`).join('')}</ul>`;
+    if (ph.aeo?.length) body += `<ul class="todo">${ph.aeo.map((c) => `<li><label><input type="checkbox" data-id="aeo-${esc(c.id)}"><span><b>${esc(pick(c.label, lang))}</b> <em>${esc(pick(c.fix, lang))}</em></span></label></li>`).join('')}</ul>`;
     if (ph.key === 'verify') body += `<p class="hint">${U.rerun}: <code>npx aislopmeter ${esc(scan.display || scan.target)}</code></p>`;
     return `<li class="phase"><details${i < 2 ? ' open' : ''}><summary><span class="pnum">${i + 1}</span><span class="phead"><span class="ptitle">${esc(pick(ph.title, lang))}</span><span class="pmeta">${meta}</span></span></summary><div class="pbody"><p class="why">${esc(pick(ph.why, lang))}</p>${body}</div></details></li>`;
   }).join('');
@@ -359,7 +362,7 @@ ul.locs li code{color:var(--blue)}
 ul.locs li span{color:var(--muted)}
 .plain{padding-left:18px;margin:6px 0}
 .plain li{margin:4px 0}
-.good{color:var(--good)}
+.good{color:var(--good)} .bad{color:var(--stain)}
 .hist{list-style:none;padding:0;margin:0;display:grid;gap:8px;max-width:520px}
 .hist li{display:grid;grid-template-columns:48px minmax(0,1fr) 40px;gap:12px;align-items:center}
 /* plan */
@@ -453,6 +456,7 @@ footer .wrap{padding-block:18px 32px}
 
   ${strengths.length ? `<section class="block"><h2>${U.strengths}</h2><p class="lead">${U.strengthsNote}</p><ul class="plain">${strengths.map((f) => `<li><span class="good mono">${fmt(f.pts)}</span> ${esc(pick(f.title, lang))}: <code>${esc((f.evidence || []).join(', '))}</code></li>`).join('')}</ul></section>` : ''}
   ${builder.length ? `<section class="block"><h2>${U.builder}</h2><p class="lead">${U.builderNote}</p><ul class="plain">${builder.map((f) => `<li>${esc(pick(f.title, lang))}: <code>${esc((f.evidence || []).join(', '))}</code></li>`).join('')}</ul></section>` : ''}
+  ${scan.aeo?.total ? `<section class="block"><h2>${U.aeo}: ${scan.aeo.passed}/${scan.aeo.total}</h2><p class="lead">${U.aeoNote}</p><ul class="plain">${scan.aeo.checks.map((c) => `<li><span class="${c.ok ? 'good' : 'bad'} mono">${c.ok ? '✓' : '✗'}</span> <b>${esc(pick(c.label, lang))}</b>: ${esc(pick(c.detail, lang))}${c.ok ? '' : `<br><span class="hint">${esc(pick(c.fix, lang))}</span>`}</li>`).join('')}</ul></section>` : ''}
   ${notes ? `<section class="block"><h2>${U.notes}</h2><ul class="plain">${notes}</ul></section>` : ''}
   ${histHtml}
 </section>

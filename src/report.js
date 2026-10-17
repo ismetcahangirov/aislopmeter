@@ -23,7 +23,7 @@ const L = {
     onPages: (n) => `on ${n} page${n === 1 ? '' : 's'}`,
     pageNext: (id) => `For one page's full report with its own steps, call \`slop_page\` with \`scan_id: "${id}"\` and the page path.`,
     nextText: (id) => `Call \`slop_rescue_plan\` with \`scan_id: "${id}"\` for a prioritised transformation plan, then re-scan to measure the change.`,
-    capped: 'Signals concentrate in one or two areas, so the score is capped at 45.',
+    capped: 'Signals concentrate in one or two areas, so the score is capped (35 for one area, 60 for two).',
     note: {
       shell: 'The server sent an almost empty JavaScript shell. Scores reflect that shell. Install Chrome/Edge (or set AISLOPMETER_CHROME) to render it, or scan the project folder instead.',
       'low-text': 'Little text on this page; content measurements are limited.',
@@ -35,6 +35,7 @@ const L = {
       'crawl-time': (n) => `Stopped after ${n.seconds} s with ${n.done} pages scanned. Scan again with fewer pages, or from the CLI for a longer run.`,
     },
     none: 'None.',
+    aeo: 'AI search readiness', aeoLead: 'Can ChatGPT, Claude, Perplexity and Gemini read this, tell who is behind it and quote it? A separate score; it does not change the slop score.',
     compare: 'Before / after', before: 'Before', after: 'After', change: 'Change', resolved: 'Resolved', remaining: 'Still open', newIssues: 'New',
   },
   tr: {
@@ -58,7 +59,7 @@ const L = {
     onPages: (n) => `${n} sayfada`,
     pageNext: (id) => `Tek bir sayfanın kendi adımlarıyla tam raporu için \`slop_page\` aracını \`scan_id: "${id}"\` ve sayfa yoluyla çağırın.`,
     nextText: (id) => `Öncelik sıralı dönüşüm planı için \`slop_rescue_plan\` aracını \`scan_id: "${id}"\` ile çağırın, sonra değişimi ölçmek için yeniden tarayın.`,
-    capped: 'İşaretler bir iki alanda toplandığı için skor 45 ile sınırlandı.',
+    capped: 'İşaretler bir iki alanda toplandığı için skor sınırlandı (tek alanda 35, iki alanda 60).',
     note: {
       shell: 'Sunucu neredeyse boş bir JavaScript kabuğu gönderdi, skor bu kabuğa göre. Render için Chrome/Edge kurun (ya da AISLOPMETER_CHROME ayarlayın) veya proje klasörünü tarayın.',
       'low-text': 'Sayfada az metin var, içerik ölçümleri sınırlı.',
@@ -70,6 +71,7 @@ const L = {
       'crawl-time': (n) => `${n.seconds} saniye sonra ${n.done} sayfa taranmışken durdu. Daha az sayfayla ya da komut satırından daha uzun tarayın.`,
     },
     none: 'Yok.',
+    aeo: 'AI arama hazırlığı', aeoLead: 'ChatGPT, Claude, Perplexity ve Gemini bunu okuyabiliyor, arkasında kimin olduğunu anlayıp alıntılayabiliyor mu? Ayrı bir puan; slop skorunu değiştirmez.',
     compare: 'Önce / sonra', before: 'Önce', after: 'Sonra', change: 'Değişim', resolved: 'Çözülen', remaining: 'Açık kalan', newIssues: 'Yeni',
   },
 };
@@ -156,6 +158,12 @@ export function renderReport(r, { lang = 'en', maxFindings = 25, maxLocations = 
   if (builder.length) {
     out.push(`\n## ${T.builder}`);
     for (const f of builder) out.push(`- ${pick(f.title, lang)}: \`${(f.evidence || []).join(', ')}\` — ${pick(f.detail, lang)}`);
+  }
+  if (r.aeo?.total) {
+    out.push(`\n## ${T.aeo}: ${r.aeo.passed}/${r.aeo.total} (${r.aeo.score})`);
+    out.push(T.aeoLead);
+    out.push('');
+    for (const c of r.aeo.checks) out.push(`- ${c.ok ? '✓' : '✗'} **${pick(c.label, lang)}** — ${pick(c.detail, lang)}${c.ok ? '' : `. ${pick(c.fix, lang)}`}`);
   }
   if (r.notes?.length) {
     out.push(`\n## ${T.notes}`);

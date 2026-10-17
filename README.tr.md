@@ -60,13 +60,14 @@ Sonra yapay zekâna yaz: **"https://sitem.com adresini AI slop açısından tara
 ## Ne yapar
 
 1. **Tarar.** Bütün bir web sitesini, `localhost`'ta çalışan bir uygulamayı, bir proje klasörünü (Next.js, Vite/React, Astro, Vue, Svelte, düz HTML, Markdown içerik…) ya da tek bir `.html` dosyasını tarar. Sitelerde sayfaları `sitemap.xml` ve iç linklerden bulur (`robots.txt`'ye uyar), varsayılan olarak 30 sayfaya kadar tarar (`--pages all` ile 200'e kadar) ve **her sayfaya kendi skorunu ve yapılacaklar listesini** verir. Birçok sayfada tekrarlanan bir sorun tek maddede, bulunduğu sayfaların listesiyle gösterilir.
-2. **Sayfanın gerçekte nasıl göründüğüne bakar.** Sitenin kendi stil ve script dosyalarını okur. Bilgisayarında Chrome ya da Edge varsa sayfayı açıp ölçer: hesaplanmış renkler ve gerçek kontrast, gerçekten kullanılan fontlar, ne kadarının ortalandığı, kartların gerçekten birbirinin aynısı olup olmadığı. Tarayıcı yoksa HTML ve CSS ile çalışmaya devam eder.
-3. **Puanlar.** Araştırmaya dayalı 60'tan fazla kontrolle beş alana puan verir ([kriterler ve kaynaklar](docs/CRITERIA.md)):
+2. **Sayfanın gerçekte nasıl göründüğüne bakar.** Sitenin kendi stil ve script dosyalarını okur. Bilgisayarında Chrome ya da Edge varsa sayfayı açıp ölçer: hesaplanmış renkler ve gerçek kontrast, gerçekten kullanılan fontlar, ne kadarının ortalandığı, kartların gerçekten birbirinin aynısı olup olmadığı, satır uzunluğu ve yazı boyutu, taşan ya da başka öğenin altında kalan içerik, sayfa açılırken çıkan hatalar. Tarayıcı yoksa HTML ve CSS ile çalışmaya devam eder.
+3. **Puanlar.** Araştırmaya dayalı 80'den fazla kontrolle beş alana puan verir ([kriterler ve kaynaklar](docs/CRITERIA.md)):
    - **İçerik özü:** somut bilgi, doğrulanabilir iddia, gerçek kanıt, içinde gerçekten iş olan bir portfolyo
    - **Dil kalıpları:** klişeler, kalıp başlıklar, "sadece X değil, Y", hazır buton ve kısa metinler
-   - **Şablon tasarım:** mor gradyan, parlama, emoji ve hazır ikonlar, standart açılış sayfası ve portfolyo şablonları, Tailwind'in varsayılan renkleri, daktilo efekti
-   - **Özensiz detaylar:** lorem ipsum, `href="#"`, "Vite + React + TS", sohbet botu kalıntıları, JavaScript olmadan boş kalan sayfalar
+   - **Şablon tasarım:** mor gradyan, parlama, emoji ve hazır ikonlar, standart açılış sayfası ve portfolyo şablonları, Tailwind'in varsayılan renkleri, ızgara desenli arka planlar, her başlığın üstündeki küçük etiketler, zıplayan ve yanıp sönen hareketler, kart içinde kart ve kendi `DESIGN.md` dosyandan sapmalar
+   - **Özensiz detaylar:** lorem ipsum, `href="#"`, "Vite + React + TS", sohbet botu kalıntıları, JavaScript olmadan boş kalan sayfalar, kırık görseller, yükleme hataları, çok küçük, çok uzun satırlı ya da başka öğenin altında kalan metin
    - **Üretici izleri:** Lovable, Bolt, v0, Replit, Base44 (yalnızca bilgi)
+   - Ayrıca ayrı bir **AI arama hazırlığı** puanı: ChatGPT, Claude, Perplexity ve Gemini sayfayı okuyabiliyor, arkasında kimin olduğunu anlayıp alıntılayabiliyor mu (JSON-LD, AI tarayıcıları için robots.txt, `llms.txt`, site haritası, JavaScript olmadan okunabilirlik, alıntılanabilir paragraflar)
 4. **Her bulgu için ne yapacağını söyler:** tek satırlık düzeltme, numaralı adımlar, tam `dosya:satır` konumları ve sitenin kendi cümleleri, önce/sonra örneği, "bitti sayılır" kontrolü ve **Yapay zekân için prompt olarak kopyala** düğmesi.
 5. **Siteye göre kurtarma planı çıkarır:** önce sitenin türüne uygun sorular (yapay zekâ bilgi uydurmasın diye), sonra temizlik, metin, tasarım ve güven adımları; her birinin tahmini skoruyla.
 6. **Gösterir ve yeniden ölçer.** **Rapor**, **Yapılacaklar** ve sitelerde **Sayfalar** ekranlı görsel rapor yazar; her değişiklikten sonra önce/sonra tablosu verir.

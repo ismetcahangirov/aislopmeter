@@ -85,6 +85,8 @@ The visual report has three screens:
 - **What to do:** a checklist, time estimates, the questions for the owner.
 - **Pages** (site scans): every page's score, worst first.
 
+Under the findings there is also an **AI search readiness** score (0-100): can ChatGPT, Claude, Perplexity and Gemini read the page, tell who is behind it and quote it? It looks at 11 things: JSON-LD structured data, readable without JavaScript, title and description, Open Graph, canonical, one h1, author and date, quotable paragraphs, robots.txt open to AI search crawlers, `llms.txt` and a sitemap. It does not change the slop score; what is missing shows up as its own phase in the rescue plan.
+
 Every finding has a **Copy as a prompt** button: ready text you can paste to your AI to fix that one problem.
 
 ### Step 4: Fix
@@ -137,6 +139,8 @@ Use these as they are. Write in Turkish and the report comes in Turkish.
 | The visual report | `Open the report in my browser.` |
 | The rules | `What does AI Slop Meter score on? Show me the criteria.` |
 | Pasted HTML | `Scan this HTML for slop: <html>…` |
+| AI search | `Can ChatGPT and Claude read my site? Show the AI search readiness and fix what's missing.` |
+| Design system | `This project has a DESIGN.md; find colours, fonts and radii outside it and fix them.` |
 
 **Built-in prompts.** Two ready prompts; in Claude Code they appear when you type `/`:
 - `/mcp__aislopmeter__rescue`: scans, asks the questions, applies the plan, re-measures until the target score.
@@ -300,7 +304,8 @@ Click it on any page: the score, the top findings and a copy-for-your-AI button 
   "lang": "en",
   "pages": 30,
   "targetScore": 20,
-  "failAbove": 40
+  "failAbove": 40,
+  "design": "docs/DESIGN.md"
 }
 ```
 
@@ -314,6 +319,9 @@ Click it on any page: the score, the top findings and a copy-for-your-AI button 
 | `targetScore` | Target of the rescue plan |
 | `render` | `auto`, `always` or `never` |
 | `failAbove` | Limit for the CLI and the Action |
+| `design` | The design spec to compare against. Folder scans find `DESIGN.md` at the root or in `docs/` by themselves; for site scans, name it here |
+
+**DESIGN.md.** If your project has a `DESIGN.md` with its colours, fonts and corner radii, values in the stylesheets outside that list show up as `design-drift`. The format is free: hex codes for colours, quoted names for fonts, px values for radii. Example: [examples/kavruk/after/DESIGN.md](../examples/kavruk/after/DESIGN.md).
 
 The report says which checks were turned off. `--no-config` ignores the file.
 

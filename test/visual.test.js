@@ -23,3 +23,21 @@ test('browser measurements: contrast, fonts, centring, dark background', async (
     await r.close();
   }
 });
+
+test('browser measurements: layout problems and page errors', async (t) => {
+  delete process.env.AISLOPMETER_BROWSER;
+  const r = await openRenderer();
+  if (!r.available) { t.skip('no local browser'); return; }
+  try {
+    const v = (await r.render(pathToFileURL(join(here, 'fixtures', 'layout', 'broken.html')).toString(), { visual: true })).visual;
+    assert.ok(v.layout.tinyText.n >= 2, 'tiny text');
+    assert.ok(v.layout.covered.n >= 2, 'covered text');
+    assert.ok(v.layout.cramped.n >= 3, 'cramped boxes');
+    assert.ok(v.layout.nested.n >= 2, 'nested cards');
+    assert.ok(v.layout.edge.n >= 2, 'text on the edge');
+    assert.equal(v.layout.spill.page, true, 'page scrolls sideways');
+    assert.equal(v.jsErrors.length, 1, 'one load error');
+  } finally {
+    await r.close();
+  }
+});
