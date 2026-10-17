@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 (2026-10-18)
+
+- **What the owner keeps stays.** Words in `keep` ("our purple is the brand", "keep it dark", "the font stays") take the matching findings out of the rescue plan, and the plan tells the AI not to touch them and how to switch them off in `.aislopmeter.json`. The `rescue` prompt and the skill re-plan with `keep` as soon as the owner says something must stay.
+
 ## 0.3.1 (2026-10-18)
 
 - **Design is the owner's choice.** The rescue plan, the `rescue` prompt and the Claude Code skill now say: propose 2-3 different design directions from the site's own subject, wait for the owner's pick, never reuse another site's look. The plan also asks which sites or brands the owner likes and three words for how the site should feel.

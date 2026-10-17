@@ -312,7 +312,7 @@ Click it on any page: the score, the top findings and a copy-for-your-AI button 
 | Key | What it does |
 |---|---|
 | `disable` | Checks to turn off (ids are in the report, e.g. `purple-gradient`, `em-dash`) |
-| `keep` | Passed to the rescue plan as "do not touch" |
+| `keep` | Passed to the rescue plan as "do not touch". Words like "purple", "dark theme", "font" or "animation" take the matching findings out of the plan, so the AI leaves them alone (they still count in the score; use `disable` to stop that) |
 | `ignore` | Paths to skip in folder scans |
 | `lang` | Default report language |
 | `pages` | Default number of pages |

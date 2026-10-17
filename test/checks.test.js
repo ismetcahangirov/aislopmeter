@@ -116,3 +116,26 @@ test('a folder scan finds DESIGN.md by itself and does not score it as copy', as
   assert.ok(f, ids(r).join(' '));
   assert.ok(f.locations.some((l) => l.file === 'style.css'), JSON.stringify(f.locations));
 });
+
+test('what the owner keeps leaves the plan: "our purple is the brand"', async () => {
+  const { buildRescuePlan, renderRescuePlan } = await import('../src/rescue.js');
+  const body = '<section style="background:linear-gradient(135deg,#7c3aed,#4f46e5)"><h1>Ship faster</h1></section>' + prose(4);
+  const r = await scanHtml(page(body));
+  assert.ok(ids(r).includes('purple-gradient'), ids(r).join(' '));
+  const plan = buildRescuePlan(r, { keep: 'Mor marka rengimiz ve logomuz kalsın' });
+  const inSteps = plan.phases.flatMap((p) => p.steps || []).map((f) => f.id);
+  assert.ok(!inSteps.includes('purple-gradient'), inSteps.join(' '));
+  assert.deepEqual(plan.kept.map((f) => f.id), ['purple-gradient']);
+  const md = renderRescuePlan(plan, { lang: 'tr' });
+  assert.ok(md.includes('"disable": ["purple-gradient"]'), md.slice(0, 400));
+  // without keep, it is in the plan
+  const plan2 = buildRescuePlan(r, {});
+  assert.ok(plan2.phases.flatMap((p) => p.steps || []).some((f) => f.id === 'purple-gradient'));
+});
+
+test('a solid brand purple is not slop by itself', async () => {
+  const css = '<style>a.btn{background:#6b2d8f;color:#fff}h1,h2{color:#6b2d8f}</style>';
+  const r = await scanHtml(page(`<h1>Moda Fırını</h1>${prose(5)}<a class="btn" href="/siparis">Sipariş ver</a>`, css));
+  assert.ok(!ids(r).some((x) => /purple|palette/.test(x)), ids(r).join(' '));
+  assert.ok(r.total < 20, `score ${r.total}`);
+});

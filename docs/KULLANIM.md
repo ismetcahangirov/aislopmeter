@@ -313,7 +313,7 @@ Projenin köküne (ya da komutu çalıştırdığın klasöre) `.aislopmeter.jso
 | Anahtar | Ne yapar |
 |---|---|
 | `disable` | Kapatılacak kontroller (id'ler raporda yazar, örn. `purple-gradient`, `em-dash`) |
-| `keep` | Kurtarma planına "buna dokunma" olarak gider |
+| `keep` | Kurtarma planına "buna dokunma" olarak gider. İçinde "mor", "koyu tema", "font", "animasyon" gibi kelimeler geçerse ilgili bulgular plandan çıkar ve yapay zekâ onlara dokunmaz (skorda kalmaya devam ederler; saymasın istersen `disable` kullan) |
 | `ignore` | Klasör taramasında atlanacak yollar |
 | `lang` | Varsayılan rapor dili |
 | `pages` | Varsayılan sayfa sayısı |

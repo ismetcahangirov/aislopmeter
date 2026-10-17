@@ -99,8 +99,34 @@ function simulate(r, removeIds) {
 }
 const key = (f) => f.id + '|' + (f.page || '');
 
+// What the owner said must stay, in their words → the findings that would change it.
+// Those findings stay in the score (they are still there) but leave the to-do list.
+const KEEP_MAP = [
+  [/\b(?:mor|purple|violet|indigo|lila|eflatun|menekşe|magenta|fuşya|fuchsia)/i, ['purple-gradient', 'default-palette']],
+  [/gradyan|gradient|geçişli renk/i, ['purple-gradient', 'gradient-text']],
+  [/koyu|karanlık|siyah|dark|black|gece/i, ['perma-dark', 'acid-on-black']],
+  [/krem|cream|kiremit|terracotta|bej|beige/i, ['cream-terracotta']],
+  [/neon|asit|acid|fosforlu/i, ['acid-on-black']],
+  [/yazı ?tip|font|typeface|inter\b|poppins|space grotesk|geist|montserrat/i, ['default-font']],
+  [/animasyon|efekt|hareket|animation|effect|motion|daktilo|typing|imleç|cursor|parçacık|particle/i, ['gimmick-effects', 'motion-everywhere', 'motion-tells']],
+  [/emoji/i, ['emoji-icons', 'emoji-headings']],
+  [/ikon|icon|lucide/i, ['stock-icons', 'icon-tiles']],
+  [/kart|card/i, ['card-template', 'nested-cards']],
+  [/yuvarlak|rounded|radius|köşe/i, ['rounded-everything']],
+  [/cam\b|glass|glow|parlama|bulanık|blur/i, ['glow-glass']],
+  [/ortala|centred|centered/i, ['centred-everything']],
+  [/büyük başlık|giant|big headline|dev başlık/i, ['giant-hero']],
+];
+export function keptFindings(keep, issues) {
+  if (!keep) return [];
+  const ids = new Set(KEEP_MAP.filter(([re]) => re.test(keep)).flatMap(([, list]) => list));
+  return issues.filter((f) => ids.has(f.id));
+}
+
 export function buildRescuePlan(r, { keep = r.config?.keep || '', targetScore = 20 } = {}) {
-  const issues = r.findings.filter((f) => f.kind === 'issue');
+  const kept = keptFindings(keep, r.findings.filter((f) => f.kind === 'issue'));
+  const keptIds = new Set(kept.map((f) => f.id));
+  const issues = r.findings.filter((f) => f.kind === 'issue' && !keptIds.has(f.id));
   const used = new Set();
   const phases = [];
   let removed = new Set();
@@ -142,7 +168,7 @@ export function buildRescuePlan(r, { keep = r.config?.keep || '', targetScore = 
   if (aeoMissing.length) phases.push({ ...PHASES.find((p) => p.key === 'aeo'), aeo: aeoMissing, steps: [], gain: 0, scoreAfter: score });
   phases.push({ ...PHASES.find((p) => p.key === 'verify'), gain: 0, scoreAfter: score });
 
-  return { scanId: r.id, target: r.target, kind: r.kind, total: r.total, band: r.band, pageType: type, keep, targetScore, estimate: score, phases, rules: RULES, aeo: r.aeo ? { score: r.aeo.score, passed: r.aeo.passed, total: r.aeo.total } : null };
+  return { scanId: r.id, target: r.target, kind: r.kind, total: r.total, band: r.band, pageType: type, keep, kept: kept.map((f) => ({ id: f.id, title: f.title, pts: f.pts })), targetScore, estimate: score, phases, rules: RULES, aeo: r.aeo ? { score: r.aeo.score, passed: r.aeo.passed, total: r.aeo.total } : null };
 }
 
 export function renderRescuePlan(plan, { lang = 'en' } = {}) {
@@ -155,6 +181,10 @@ export function renderRescuePlan(plan, { lang = 'en' } = {}) {
     ? `Şu an **${plan.total}/100 (${T.bands[plan.band]})**. Bu plan uygulanırsa tahmini skor **~${plan.estimate}**. Hedef: **${plan.targetScore}**. Sayfa türü tahmini: ${PAGE_TYPES[plan.pageType]?.tr || plan.pageType}.`
     : `Now **${plan.total}/100 (${T.bands[plan.band]})**. Estimated after this plan: **~${plan.estimate}**. Target: **${plan.targetScore}**. Page type guess: ${PAGE_TYPES[plan.pageType]?.en || plan.pageType}.`);
   if (plan.keep) out.push(tr ? `\nSahibinin korumak istedikleri: **${plan.keep}**. Bunlara dokunmayın.` : `\nThe owner wants to keep: **${plan.keep}**. Do not change these.`);
+  if (plan.kept?.length) {
+    out.push(tr ? `Bu yüzden şu bulgular plandan çıkarıldı, ilgili yerlere dokunmayın: ${plan.kept.map((f) => `${pick(f.title, lang)} (\`${f.id}\`)`).join(', ')}. Skorda kalmaya devam ederler; kalıcı olarak kapatmak için \`.aislopmeter.json\` içine \`"disable": [${plan.kept.map((f) => `"${f.id}"`).join(', ')}]\` yazılabilir.`
+      : `So these findings are left out of the plan; do not touch what they point at: ${plan.kept.map((f) => `${pick(f.title, lang)} (\`${f.id}\`)`).join(', ')}. They still count in the score; to switch them off for good, add \`"disable": [${plan.kept.map((f) => `"${f.id}"`).join(', ')}]\` to \`.aislopmeter.json\`.`);
+  }
   out.push(`\n## ${tr ? 'Kurallar' : 'Rules'}`);
   for (const r of plan.rules) out.push(`- ${pick(r, lang)}`);
 

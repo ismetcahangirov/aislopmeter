@@ -469,7 +469,7 @@ footer .wrap{padding-block:18px 32px}
   </div>
   ${startHere}
   <ol class="phases">${phaseHtml}</ol>
-  ${plan.keep ? `<p class="hint"><b>${U.keepTitle}:</b> ${esc(plan.keep)}</p>` : ''}
+  ${plan.keep ? `<p class="hint"><b>${U.keepTitle}:</b> ${esc(plan.keep)}${plan.kept?.length ? ` · ${esc(plan.kept.map((f) => pick(f.title, lang)).join(', '))}` : ''}</p>` : ''}
   <details class="rules"><summary>${U.rulesTitle}</summary><ul class="method">${plan.rules.map((r) => `<li>${esc(pick(r, lang))}</li>`).join('')}</ul></details>
   <div class="row" style="margin-top:28px"><button type="button" class="btn ghost" data-copy="prompt">${U.copyPrompt}</button><span class="status" aria-live="polite"></span></div>
   <p class="hint">${U.promptNote}</p>

@@ -1,7 +1,7 @@
 {
   "name": "aislopmeter",
   "displayName": "AI Slop Meter",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Measure the AI slop on any website, local app or project folder, then fix it with site-specific, step-by-step instructions.",
   "author": { "name": "Ömer Göçmen", "url": "https://github.com/omergocmen" },
   "homepage": "https://aislopmeter.netlify.app",
