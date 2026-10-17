@@ -238,7 +238,7 @@ export function createServer() {
 1. Call slop_scan on ${target}. Summarise the score and the 3 findings that matter most in plain words. For a site, also name the 3 worst pages.
 2. Call slop_rescue_plan with that scan id. Show me the phases briefly. While applying, use slop_fix for the exact steps of each finding.
 3. Ask me the owner questions from the plan in one message. Wait for my answers. Never invent facts, numbers, names, quotes or customers; where I have no answer, use a [placeholder] or cut the claim.
-4. Apply the plan phase by phase. If ${target} is a project folder, edit the files at the given file:line locations. If it is a URL, give me rewritten copy and a concrete design spec I can paste into my builder.
+4. Apply the plan phase by phase. Before the design phase, show me 2-3 clearly different design directions (palette, type, layout, why each fits) and wait for my pick; do not redesign without it, and keep anything I asked to keep. If ${target} is a project folder, edit the files at the given file:line locations. If it is a URL, give me rewritten copy and a concrete design spec I can paste into my builder.
 5. After each phase, call slop_scan on the same target again and show the before/after table.
 6. Stop when the score is at or below ${goal}, or when the remaining findings need facts only I have.
 7. Call slop_report with the latest scan id, with open: true only if I said yes in step 0. Finish with a short summary: the before/after score, what changed, what is still open, and the report path.`,

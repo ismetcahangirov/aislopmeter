@@ -49,6 +49,8 @@ const PHASES = [
 ];
 
 const RULES = [
+  t('Design is the owner\'s choice. Before the design phase, propose 2-3 clearly different directions (palette, type, layout, one sentence each on why it fits this subject), wait for the owner to pick one, and apply only that. Each site gets its own direction from its own subject; never reuse another site\'s look.',
+    'Tasarım sahibinin kararıdır. Tasarım aşamasından önce birbirinden belirgin şekilde farklı 2-3 yön önerin (palet, yazı tipi, düzen; her biri için bu konuya neden uyduğunu anlatan bir cümle), sahibinin birini seçmesini bekleyin ve yalnızca onu uygulayın. Her site kendi konusundan çıkan kendi yönünü alır; başka bir sitenin görünümünü asla tekrar kullanmayın.'),
   t('Never invent facts, numbers, names, quotes, prices, customers or awards. Where a fact is missing, write a [placeholder] and ask, or cut the claim.',
     'Asla bilgi, rakam, isim, alıntı, fiyat, müşteri ya da ödül uydurmayın. Eksik bilgi için [yer tutucu] bırakıp sorun ya da iddiayı silin.'),
   t('Do not swap one cliché for its synonym ("seamless" → "frictionless"). Replace it with a fact or delete it.',
@@ -114,6 +116,8 @@ export function buildRescuePlan(r, { keep = r.config?.keep || '', targetScore = 
     ...(type === 'portfolio' ? INTERVIEW.corePortfolio : INTERVIEW.core),
     ...(INTERVIEW[type] || []),
     ...byFinding,
+    // the redesign starts from the owner's taste, not from the AI's next default
+    ...(issues.some((f) => f.cat === 'design') ? [t('Which 2-3 sites, brands or places do you like the look of, and which three words should describe how this one feels?', 'Görünümünü sevdiğin 2-3 site, marka ya da mekân hangisi; bu site hangi üç kelimeyle hissettirmeli?')] : []),
   ].filter((q) => { const k = q.en; if (seenQ.has(k)) return false; seenQ.add(k); return true; });
   phases.push({ ...PHASES[0], questions, steps: [], gain: 0, scoreAfter: score });
 

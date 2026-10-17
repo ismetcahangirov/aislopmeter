@@ -10,6 +10,7 @@
 - **DESIGN.md drift:** with a DESIGN.md in the folder (or `"design"` in `.aislopmeter.json`), colours, fonts and radii outside it become `design-drift`. DESIGN.md, AGENTS.md and CLAUDE.md are no longer scored as page copy.
 - **Kavruk example** now has JSON-LD, `llms.txt`, a sitemap and a DESIGN.md: readiness 36 → 100.
 - The promo site is AI-search ready too (JSON-LD, `llms.txt`, sitemap).
+- **Design is the owner's choice.** The rescue plan, the `rescue` prompt and the Claude Code skill now say: propose 2-3 different design directions from the site's own subject, wait for the owner's pick, never reuse another site's look. The plan also asks which sites or brands the owner likes and three words for how the site should feel.
 - Fix: the "capped" note gave the wrong limit (it is 35 for one area, 60 for two).
 
 ## 0.2.3 (2026-10-17)
