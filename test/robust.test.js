@@ -63,3 +63,39 @@ test('.aislopmeter.json turns checks off and sets the language', async () => {
   assert.deepEqual(r.config.disable, ['headline-formula']);
   assert.match(badgeJson(r).message, /^\d+\/100$/);
 });
+
+test('a Next.js project: no false alarms from repo notes, code comments, style values or spreads', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'aislopmeter-next-'));
+  await mkdir(join(dir, 'src', 'app'), { recursive: true });
+  await mkdir(join(dir, 'messages'));
+  await writeFile(join(dir, 'BACKLOG.md'), '- [x] Hero — 460x650 mobile, 40% taller\n- [x] Player — 25% higher\n- [x] Cards — 3x faster');
+  await writeFile(join(dir, 'PROJECT-ISSUES.md'), '- Search — 50% slower — 10x more requests');
+  await writeFile(join(dir, 'next.config.ts'), '/**\n * Body images are rendered as a plain `<img>`, not next/image.\n */\nexport default {};\n// a plain <img> on purpose\n');
+  await writeFile(join(dir, 'src', 'cache.ts'), 'export const key = (namespace: string, ...parts: string[]) => [namespace, ...parts].join(":");\nconst x = [name].length;\n');
+  await writeFile(join(dir, 'src', 'app', 'robots.ts'), 'export default function robots() { return { rules: [{ userAgent: "*", allow: "/" }, { userAgent: ["AhrefsBot"], disallow: "/" }] }; }\n');
+  await writeFile(join(dir, 'src', 'app', 'layout.tsx'), [
+    'export async function generateMetadata() {',
+    '  const description = t("tagline");',
+    '  return { title: "Kaya Bakery: sourdough on Moda Street", description };',
+    '}',
+    'export default function Layout({ children }) {',
+    '  return <div style={{ background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.6) 100%)" }}><h1>Kaya Bakery</h1><p>Sourdough from 7am at 14 Moda Street, closed Mondays.</p>{children}</div>;',
+    '}',
+  ].join('\n'));
+  await writeFile(join(dir, 'messages', 'ru.json'), JSON.stringify({ a: 'Единственный способ входа — через Google.', b: 'Пусто — видео целиком.', c: 'Москва — столица России.', d: 'Хлеб — с семи утра.' }));
+  const r = await scanProject(dir);
+  const found = r.findings.map((f) => f.id);
+  for (const id of ['vanity', 'missing-alt', 'placeholder', 'em-dash']) assert.ok(!found.includes(id), `false alarm: ${id}`);
+  const aeo = Object.fromEntries(r.aeo.checks.map((c) => [c.id, c]));
+  assert.equal(aeo['title-description'].ok, true, aeo['title-description'].detail.en);
+  assert.match(aeo['ai-crawlers'].detail.en, /src\/app\/robots\.ts/);
+});
+
+test('robots.ts that names an AI search crawler is flagged', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'aislopmeter-robots-'));
+  await mkdir(join(dir, 'app'));
+  await writeFile(join(dir, 'app', 'robots.ts'), 'export default function robots() { return { rules: [{ userAgent: "OAI-SearchBot", disallow: "/" }] }; }\n');
+  await writeFile(join(dir, 'app', 'page.tsx'), 'export default () => <p>Sourdough from 7am at 14 Moda Street, closed Mondays.</p>;\n');
+  const r = await scanProject(dir);
+  assert.equal(r.aeo.checks.find((c) => c.id === 'ai-crawlers').ok, false);
+});

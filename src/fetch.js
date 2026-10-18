@@ -16,7 +16,7 @@ export function normalizeUrl(input) {
   return u.toString();
 }
 
-export async function fetchHtml(url, { timeoutMs = 20000 } = {}) {
+export async function fetchHtml(url, { timeoutMs = 20000, browser = true } = {}) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), timeoutMs);
   try {
@@ -26,7 +26,24 @@ export async function fetchHtml(url, { timeoutMs = 20000 } = {}) {
       headers: { 'user-agent': UA, accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5', 'accept-language': 'en,tr;q=0.8' },
     });
     const type = res.headers.get('content-type') || '';
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status} ${res.statusText} for ${url}`);
+      if (await isChallenge(res)) {
+        err.challenge = true;
+        if (browser) {
+          const got = await browserGet(url, { timeoutMs: Math.max(timeoutMs, 30000) });
+          if (got?.ok) return { html: got.text, finalUrl: got.url || url, status: got.status, viaBrowser: true };
+          if (got) {
+            err.message = `HTTP ${got.status} for ${url}` + (got.status === 429 ? ' (past the bot check, but the site limits requests per visitor; scan fewer pages or wait a minute)' : ' (past the bot check)');
+            throw err;
+          }
+        }
+        err.message += browser
+          ? ' (the site answers with a bot check, and no local Chrome/Edge could get past it)'
+          : ' (the site answers with a bot check; scan with render "auto" to read it through the local Chrome/Edge)';
+      }
+      throw err;
+    }
     if (type && !/html|xml|text\/plain/i.test(type)) throw new Error(`Not an HTML page (${type})`);
     if (!res.body) return { html: '', finalUrl: res.url || url, status: res.status };
     const reader = res.body.getReader();
@@ -52,6 +69,66 @@ export async function fetchHtml(url, { timeoutMs = 20000 } = {}) {
   } finally {
     clearTimeout(t);
   }
+}
+
+/* ---------- bot checks ---------- */
+// Vercel and Cloudflare bot protection answer non-browser clients with a JavaScript challenge
+// (403/429/503). A real Chrome passes it; after that, requests made from inside that page pass too.
+const CHALLENGE_PAGE = /Vercel Security Checkpoint|<title>Just a moment\.\.\.<\/title>|_cf_chl_opt|\/cdn-cgi\/challenge-platform\//i;
+
+async function isChallenge(res) {
+  if (![403, 429, 503].includes(res.status)) return false;
+  const h = res.headers;
+  if (/challenge/i.test(h.get('x-vercel-mitigated') || '') || h.get('x-vercel-challenge-token') || /challenge/i.test(h.get('cf-mitigated') || '')) return true;
+  if (!/cloudflare|vercel/i.test(h.get('server') || '')) return false;
+  const body = await res.text().catch(() => '');
+  return CHALLENGE_PAGE.test(body.slice(0, 50000));
+}
+
+const gates = new Map();
+let gateBrowser = null;
+let gateTimer = null;
+
+async function gatePage(url, timeoutMs) {
+  const origin = new URL(url).origin;
+  if (!gates.has(origin)) {
+    gates.set(origin, (async () => {
+      if (!gateBrowser) gateBrowser = launchBrowser().then((x) => x.browser);
+      const browser = await gateBrowser;
+      if (!browser) return null;
+      const page = await browser.newPage({ userAgent: UA.replace('compatible; ', '') });
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs }).catch(() => {});
+      for (let i = 0; i < 15 && CHALLENGE_PAGE.test(await page.content().catch(() => '')); i++) await page.waitForTimeout(1000);
+      return page;
+    })().catch(() => null));
+  }
+  return gates.get(origin);
+}
+
+/** Fetch a URL from inside a real browser page on its origin, once that page got past the bot check. */
+export async function browserGet(url, { timeoutMs = 30000 } = {}) {
+  clearTimeout(gateTimer);
+  gateTimer = setTimeout(closeBrowserGates, 60000);
+  gateTimer.unref?.();
+  const page = await gatePage(url, timeoutMs);
+  if (!page) return null;
+  const got = await page.evaluate(async ({ u, max }) => {
+    const r = await fetch(u, { redirect: 'follow', credentials: 'include' });
+    const text = await r.text();
+    return { ok: r.ok, status: r.status, url: r.url, type: r.headers.get('content-type') || '', text: text.length > max ? text.slice(0, max) : text };
+  }, { u: url, max: MAX_BYTES }).catch(() => null);
+  return got && !CHALLENGE_PAGE.test(got.text.slice(0, 50000)) ? got : null;
+}
+
+/** Was this origin read through the browser because of a bot check? */
+export const behindBotCheck = (url) => { try { return gates.has(new URL(url).origin); } catch { return false; } };
+
+export async function closeBrowserGates() {
+  clearTimeout(gateTimer);
+  const b = gateBrowser;
+  gateBrowser = null;
+  gates.clear();
+  if (b) await b.then((x) => x?.close()).catch(() => {});
 }
 
 /** True when the server HTML has almost no text but a JS mount point. */
@@ -140,7 +217,11 @@ async function fetchText2(url) {
   const t = setTimeout(() => ctl.abort(), 10000);
   try {
     const res = await fetch(url, { signal: ctl.signal, headers: { 'user-agent': UA } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (!behindBotCheck(url)) return null;
+      const got = await browserGet(url);
+      return got?.ok ? got.text.slice(0, MAX_ASSET) : null;
+    }
     const len = +(res.headers.get('content-length') || 0);
     if (len > MAX_ASSET) return null;
     const text = await res.text();
@@ -173,8 +254,9 @@ export async function fetchAssets(html, pageUrl, cache = new Map()) {
  */
 export async function loadPage(input, { render = 'auto', assets = true, assetCache, renderer = null, visual = true } = {}) {
   const url = normalizeUrl(input);
-  const got = await fetchHtml(url);
+  const got = await fetchHtml(url, { browser: render !== 'never' });
   const notes = [];
+  if (got.viaBrowser) notes.push({ code: 'bot-check' });
   let html = got.html;
   let rendered = false;
   let vis = null;
@@ -223,7 +305,11 @@ export async function fetchPlain(url, { timeoutMs = 8000, maxBytes = 300 * 1024 
   const tm = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { redirect: 'follow', signal: ctl.signal, headers: { 'user-agent': UA, accept: 'text/plain,text/markdown,application/xml,text/xml;q=0.9,*/*;q=0.1' } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (!behindBotCheck(url)) return null;
+      const got = await browserGet(url, { timeoutMs });
+      return got?.ok ? got.text.slice(0, maxBytes) : null;
+    }
     const text = await res.text();
     return text.length > maxBytes ? text.slice(0, maxBytes) : text;
   } catch { return null; } finally { clearTimeout(tm); }

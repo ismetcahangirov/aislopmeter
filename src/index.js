@@ -6,7 +6,7 @@ import { corpusFromHtml } from './corpus/html.js';
 import { corpusFromProject } from './corpus/project.js';
 import { runRules } from './rules.js';
 import { finalize, combinePages, severityOf } from './score.js';
-import { loadPage, looksLikeShell, linkedAssets, openRenderer, fetchPlain } from './fetch.js';
+import { loadPage, looksLikeShell, linkedAssets, openRenderer, fetchPlain, closeBrowserGates } from './fetch.js';
 import { pageChecks, siteChecks, mergePageChecks, readiness, realText, realXml } from './aeo.js';
 import { loadDesignSpec } from './designspec.js';
 import { crawlSite } from './crawl.js';
@@ -45,8 +45,8 @@ async function folderSignals(root, C) {
   const files = (C?.sources || []).map((x) => x.file || '').join('\n');
   const pkg = (C?.sources || []).filter((x) => /(?:^|\/)package\.json$/.test(x.file || '')).map((x) => x.content).join('\n');
   const generated = /(?:^|\/)app\/sitemap\.(?:ts|js|xml)|(?:^|\/)sitemap\.(?:ts|js)$/m.test(files) || /"(?:next-sitemap|@astrojs\/sitemap|vite-plugin-sitemap|@nuxtjs\/sitemap|gatsby-plugin-sitemap)"/.test(pkg);
-  const robotsGen = /(?:^|\/)app\/robots\.(?:ts|js)$/m.test(files);
-  return { robots: robots ?? (robotsGen ? '' : null), llms: realText(llms) ? llms : null, sitemap: (realXml(sm) || generated) ? true : null };
+  const robotsCode = (C?.sources || []).find((x) => /(?:^|\/)app\/robots\.(?:ts|js)$/.test(x.file || '')) || null;
+  return { robots: robots ?? (robotsCode ? '' : null), robotsCode, llms: realText(llms) ? llms : null, sitemap: (realXml(sm) || generated) ? true : null };
 }
 
 async function analyzeCorpus(C, opts) {
@@ -89,7 +89,11 @@ export const MAX_PAGES = 200;
  * Scan a site. pages = 1 scans only the given URL; more crawls the site
  * (sitemap.xml, then internal links) and gives each page its own report.
  */
-export async function scanUrl(input, { pages = DEFAULT_PAGES, render = "auto", now, budgetMs, concurrency, onPage, disable, designSpec = null } = {}) {
+export async function scanUrl(input, opts = {}) {
+  try { return await scanSite(input, opts); } finally { await closeBrowserGates(); }
+}
+
+async function scanSite(input, { pages = DEFAULT_PAGES, render = "auto", now, budgetMs, concurrency, onPage, disable, designSpec = null } = {}) {
   const n = pages === 'all' ? MAX_PAGES : Math.max(1, Math.min(MAX_PAGES, pages | 0 || DEFAULT_PAGES));
   if (n === 1) {
     const first = await loadPage(input, { render });

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Sites behind a bot check can be scanned.** Vercel and Cloudflare bot protection answer non-browser clients with a challenge (`429` / `403` with `x-vercel-mitigated: challenge` or `cf-mitigated: challenge`). The page, its CSS and JS, `robots.txt`, `llms.txt` and the sitemap are now read through the local Chrome/Edge, and the report says so. With `render: "never"`, or without a browser, the error names the bot check instead of a bare `HTTP 429`.
+- Fix (folder scans): all-caps Markdown notes at the root (`BACKLOG.md`, `PROJECT-ISSUES.md`, `DESIGN-SPEC.md`) and `TODO`, `ROADMAP`, `NOTES` were scored as page copy.
+- Fix (folder scans): `<img>` mentioned in a code comment was counted as an image without alt text; markup, copy and images are now read with comments blanked out.
+- Fix: style values in code (`"radial-gradient(… 35%, … 100%)"`) and sizes like `460x650` were counted as vanity numbers.
+- Fix: `[namespace, ...parts].join(":")` and other bracketed code were reported as a `[Name]` placeholder.
+- Fix: em dashes in Russian, Ukrainian or Bulgarian copy, where the dash is grammar, no longer count.
+- Fix (folder scans): a title and description set in Next.js `metadata` / `generateMetadata` (or Nuxt `useHead`) were reported as missing or too short; `app/robots.ts` was reported as "no robots.txt", and an AI search crawler named in it is now flagged.
+
 ## 0.3.2 (2026-10-18)
 
 - Fix: in folder scans a meta description with an apostrophe ("Odunpazarı'ndaki…") was cut at the apostrophe.
