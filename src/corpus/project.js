@@ -16,7 +16,9 @@ const IGNORE_DIRS = new Set(['node_modules', '.git', '.next', '.nuxt', '.output'
 // Build output, tests and repo documentation: skipped only at the top of the scanned folder,
 // so a route like app/build/page.tsx is still read. Scan such a folder directly to include it.
 const ROOT_ONLY_DIRS = new Set(['dist', 'build', 'out', 'target', 'test', 'tests', 'e2e', 'docs', 'examples', 'example']);
-const REPO_DOCS = /^(?:README|CHANGELOG|CONTRIBUTING|LICENSE|CODE_OF_CONDUCT|SECURITY|HISTORY|AUTHORS|DESIGN|AGENTS|CLAUDE|GEMINI)(?:\.[\w.-]+)?$/i;
+const REPO_DOCS = /^(?:README|CHANGELOG|CHANGES|CONTRIBUTING|LICENSE|CODE_OF_CONDUCT|SECURITY|HISTORY|AUTHORS|DESIGN|AGENTS|CLAUDE|GEMINI|BACKLOG|TODO|ROADMAP|NOTES)(?:\.[\w.-]+)?$/i;
+// BACKLOG.md, PROJECT-ISSUES.md, DESIGN-SPEC.md: an all-caps Markdown name at the root is a repo note, not a page
+const CAPS_DOC = /^[A-Z][A-Z0-9]*(?:[-_][A-Z0-9]+)*\.mdx?$/;
 const IGNORE_FILE = /(?:\.min\.|\.d\.ts$|\.test\.|\.spec\.|\.stories\.|package-lock\.json$|pnpm-lock|yarn\.lock|tsconfig.*\.json$|\.eslintrc|components\.json$|manifest\.json$)/;
 // shadcn/ui primitives are library code the owner rarely touched; skip them by default.
 const UI_PRIMITIVES = /(?:^|[\\/])components[\\/]ui[\\/]/;
@@ -57,7 +59,7 @@ async function walk(root, opts) {
       } else if (e.isFile()) {
         const ext = extname(e.name).toLowerCase();
         if (!EXT.has(ext) || IGNORE_FILE.test(e.name)) continue;
-        if (depth === 0 && REPO_DOCS.test(e.name)) continue;
+        if (depth === 0 && (REPO_DOCS.test(e.name) || CAPS_DOC.test(e.name))) continue;
         if (!opts.includeUi && UI_PRIMITIVES.test(rel)) continue;
         if (ext === '.json' && e.name !== 'package.json' && !JSON_COPY_PATH.test(rel)) continue;
         if (ignored(rel)) continue;
@@ -76,11 +78,14 @@ const looksLikeClasses = (s) => {
   if (t.length < 2) return t.length === 1 && /-/.test(t[0]) && UTIL.test(t[0]);
   return t.filter((x) => UTIL.test(x)).length / t.length >= 0.7;
 };
+// style values in code: background: "radial-gradient(ellipse at center, transparent 35%, …)"
+const CSS_VALUE = /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix|(?:repeating-)?(?:linear|radial|conic)-gradient|calc|clamp|var|url|cubic-bezier|translate(?:3d|[XYZ])?|scale|rotate|blur|drop-shadow)\(/i;
 const looksLikeProse = (s) => {
   const t = s.trim();
   if (t.length < 8 || !/\s/.test(t)) return false;
   if (/^(?:https?:|\/|\.\/|\.\.\/|@\/|~\/|data:)/.test(t)) return false;
   if (/[{};]|=>|\(\)|<\/?[a-z]/i.test(t)) return false;
+  if (CSS_VALUE.test(t)) return false;
   if (looksLikeClasses(t)) return false;
   const ws = wordsOf(t);
   if (ws.length < 3) return false;
@@ -88,6 +93,16 @@ const looksLikeProse = (s) => {
   return letters / t.length > 0.6;
 };
 const stripTags = (s) => s.replace(/<[^>]*>/g, ' ').replace(/\{[^{}]*\}/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+
+const blank = (s) => s.replace(/[^\n]/g, ' ');
+function withoutComments(src, isScript) {
+  let s = src.replace(/<!--[\s\S]*?-->/g, blank);
+  // only where a comment can start, so "src/**/*.ts" and "https://" stay
+  if (isScript) s = s
+    .replace(/(^|[\s{;,(=[])\/\*[\s\S]*?\*\//g, (m, pre) => pre + blank(m.slice(pre.length)))
+    .replace(/(^|[\s{;,(])\/\/[^\n]*/g, (m, pre) => pre + blank(m.slice(pre.length)));
+  return s;
+}
 
 function extractFile(rel, ext, src, C) {
   const lineAt = lineIndex(src);
@@ -123,16 +138,20 @@ function extractFile(rel, ext, src, C) {
     return;
   }
 
+  // markup, copy and images are read with comments blanked out (line numbers kept):
+  // a doc comment that says "a plain `<img>`" is not an image on the page
+  const code = withoutComments(src, isScript);
+
   // class lists
   const seenClassIdx = new Set();
-  for (const m of src.matchAll(/\b(?:class|className|:class|tw)\s*=\s*\{?\s*(["'`])([^"'`]*?)\1/g)) {
-    const open = src.slice(Math.max(0, m.index - 300), m.index);
+  for (const m of code.matchAll(/\b(?:class|className|:class|tw)\s*=\s*\{?\s*(["'`])([^"'`]*?)\1/g)) {
+    const open = code.slice(Math.max(0, m.index - 300), m.index);
     const tag = ((open.match(/<([a-zA-Z][\w.]*)[^<>]*$/) || [])[1] || '').toLowerCase();
     C.classes.push({ value: m[2], loc: loc(m.index), tag });
     seenClassIdx.add(m.index + m[0].indexOf(m[2]));
   }
   if (isScript) {
-    for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n]){2,500})\1/g)) {
+    for (const m of code.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n]){2,500})\1/g)) {
       const at = m.index + 1;
       if (seenClassIdx.has(at)) continue;
       if (looksLikeClasses(m[2])) C.classes.push({ value: m[2], loc: loc(m.index) });
@@ -151,7 +170,7 @@ function extractFile(rel, ext, src, C) {
 
   // visible copy between tags (code samples blanked out, line numbers kept)
   if (isMarkup) {
-    const visible = src.replace(/<(pre|code)\b[^>]{0,300}>[\s\S]{0,20000}?<\/\1>/gi, (m) => m.replace(/[^\n]/g, ' '));
+    const visible = code.replace(/<(pre|code)\b[^>]{0,300}>[\s\S]{0,20000}?<\/\1>/gi, (m) => m.replace(/[^\n]/g, ' '));
     for (const m of visible.matchAll(/>([^<>{}`]*[\p{L}\p{N}][^<>{}`]*)</gu)) {
       const t = m[1].replace(/\s+/g, ' ').trim();
       if (!t || /=>|;\s*$|^\s*\)/.test(t)) continue;
@@ -160,19 +179,19 @@ function extractFile(rel, ext, src, C) {
   }
   // natural-language string literals (props, data arrays, i18n objects)
   if (isScript || isMarkup) {
-    for (const m of src.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n]){8,600})\1/g)) {
+    for (const m of code.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n]){8,600})\1/g)) {
       const v = m[2].replace(/\$\{[^}]*\}/g, ' ');
       if (looksLikeProse(v)) C.copy.push({ text: v, loc: loc(m.index) });
     }
   }
 
   // headings
-  for (const m of src.matchAll(/<h([1-6])\b[^>]{0,500}>([\s\S]{0,1000}?)<\/h\1>/gi)) {
+  for (const m of code.matchAll(/<h([1-6])\b[^>]{0,500}>([\s\S]{0,1000}?)<\/h\1>/gi)) {
     const t = stripTags(m[2]);
     C.headings.push({ level: +m[1], text: t, loc: loc(m.index) });
   }
   // buttons and links with their text
-  for (const m of src.matchAll(/<(button|Button|a|Link|NavLink)\b([^>]{0,500})>([\s\S]{0,200}?)<\/\1>/g)) {
+  for (const m of code.matchAll(/<(button|Button|a|Link|NavLink)\b([^>]{0,500})>([\s\S]{0,200}?)<\/\1>/g)) {
     const t = stripTags(m[3]);
     if (/^(?:button|Button)$/.test(m[1])) C.buttons.push({ text: t, loc: loc(m.index) });
     if (t && wordsOf(t).length <= 6) C.ctas.push({ text: t, loc: loc(m.index) });
@@ -180,23 +199,23 @@ function extractFile(rel, ext, src, C) {
     if (/^(?:a|Link|NavLink)$/.test(m[1])) C.links.push({ href: href ? href[2].trim() : null, hasHref: !!href, text: t, loc: loc(m.index) });
   }
   // images
-  for (const m of src.matchAll(/<(img|Image)\b([^>]{0,800}?)\/?>/gs)) {
+  for (const m of code.matchAll(/<(img|Image)\b([^>]{0,800}?)\/?>/gs)) {
     const attrs = m[2];
     const alt = attrs.match(/\balt\s*=\s*\{?\s*(["'`])([^"'`]*)\1/);
     const srcm = attrs.match(/\bsrc\s*=\s*\{?\s*(["'`])([^"'`]*)\1/);
     C.images.push({ src: srcm ? srcm[2] : '', alt: alt ? alt[2] : /\balt\s*=/.test(attrs) ? '(dynamic)' : null, loc: loc(m.index) });
   }
   // bold + paragraphs
-  for (const m of src.matchAll(/<(strong|b)\b[^>]*>([\s\S]{1,120}?)<\/\1>/g)) C.bold.push({ text: stripTags(m[2]), loc: loc(m.index) });
-  C.paragraphs += (src.match(/<p\b/g) || []).length;
+  for (const m of code.matchAll(/<(strong|b)\b[^>]*>([\s\S]{1,120}?)<\/\1>/g)) C.bold.push({ text: stripTags(m[2]), loc: loc(m.index) });
+  C.paragraphs += (code.match(/<p\b/g) || []).length;
 
   // emoji used as icons: icon: "🚀" in data, or a tag whose only text is an emoji
-  for (const m of src.matchAll(/\b(?:icon|emoji)\s*:\s*["'`]([^"'`]{1,12})["'`]/gu)) if (isEmojiOnly(m[1])) C.emojiOnly.push({ text: m[1], loc: loc(m.index) });
-  for (const m of src.matchAll(/>\s*([^<>{}\s]{1,12})\s*</gu)) if (isEmojiOnly(m[1])) C.emojiOnly.push({ text: m[1], loc: loc(m.index) });
+  for (const m of code.matchAll(/\b(?:icon|emoji)\s*:\s*["'`]([^"'`]{1,12})["'`]/gu)) if (isEmojiOnly(m[1])) C.emojiOnly.push({ text: m[1], loc: loc(m.index) });
+  for (const m of code.matchAll(/>\s*([^<>{}\s]{1,12})\s*</gu)) if (isEmojiOnly(m[1])) C.emojiOnly.push({ text: m[1], loc: loc(m.index) });
 
   // feature-card data arrays: { icon, title, description }
-  const fa = src.match(/\{\s*(?:icon|emoji|Icon)\s*:[^{}]{0,200}?\btitle\s*:[^{}]{0,400}?\b(?:description|desc|text|body)\s*:/gs) || [];
-  const fb = src.match(/\{\s*title\s*:[^{}]{0,300}?\b(?:description|desc|text)\s*:[^{}]{0,400}?\b(?:icon|emoji|Icon)\s*:/gs) || [];
+  const fa = code.match(/\{\s*(?:icon|emoji|Icon)\s*:[^{}]{0,200}?\btitle\s*:[^{}]{0,400}?\b(?:description|desc|text|body)\s*:/gs) || [];
+  const fb = code.match(/\{\s*title\s*:[^{}]{0,300}?\b(?:description|desc|text)\s*:[^{}]{0,400}?\b(?:icon|emoji|Icon)\s*:/gs) || [];
   if (fa.length + fb.length >= 3) C.featureArrays += 1;
 
   // fonts
@@ -250,5 +269,34 @@ export async function corpusFromProject(root, { ignore = [], includeUi = false }
     const d = indexHtml.content.match(/<meta\s+name=["']description["']\s+content=(["'])([\s\S]*?)\1/i);
     C.meta = { title: t ? t[1].trim() : null, description: d ? d[2] : null, file: indexHtml.file, titleLine: t ? indexHtml.lineAt(t.index) : 1 };
   }
+  if (!C.meta?.title) C.meta = metaFromCode(C.sources) || C.meta;
   return C;
+}
+
+// Next.js `export const metadata` / `generateMetadata`, Nuxt `useHead` / `useSeoMeta`, <svelte:head>, <Head>:
+// the title and description are set in code. A value that is not a literal (t("tagline")) still counts as set.
+const IN_CODE = '(set in code)';
+function metaFromCode(sources) {
+  const META = /export\s+(?:const\s+metadata\b|(?:async\s+)?function\s+generateMetadata\b)|\buse(?:Head|SeoMeta)\s*\(/;
+  const files = sources.filter((s) => SCRIPT.has(extname(s.file).toLowerCase()) && META.test(s.content))
+    // the root layout first: it holds the site-wide default
+    .sort((a, b) => (/(?:^|\/)layout\.[jt]sx?$/.test(b.file) - /(?:^|\/)layout\.[jt]sx?$/.test(a.file)) || a.file.split('/').length - b.file.split('/').length);
+  for (const s of files) {
+    const at = s.content.search(META);
+    const body = s.content.slice(at, at + 6000);
+    const tm = body.match(/\btitle\s*:\s*(?:\{[^{}]*?\bdefault\s*:\s*)?(?:(["'`])([^"'`\n]{1,200})\1|([\w.$]+\s*\())/);
+    if (!tm) continue;
+    const dm = body.match(/\bdescription\s*:\s*(["'`])([^"'`\n]{1,400})\1/);
+    const dSet = dm || /\bdescription\s*[:,}]/.test(body);
+    return {
+      title: tm[2] ? tm[2].trim() : IN_CODE,
+      description: dm ? dm[2] : dSet ? IN_CODE : null,
+      file: s.file, titleLine: s.lineAt(at + tm.index), inCode: true,
+    };
+  }
+  for (const s of sources) {
+    const m = s.content.match(/<(?:svelte:head|Head)\b[^>]*>[\s\S]{0,2000}?<title>([^<{]{1,200})<\/title>/);
+    if (m) return { title: m[1].trim(), description: null, file: s.file, titleLine: s.lineAt(m.index), inCode: true };
+  }
+  return null;
 }

@@ -95,3 +95,18 @@ test('robots.txt rules and page keys', () => {
   assert.equal(star.allowed('/index.php?x=1'), true);
   assert.equal(pageKey('https://www.x.com/a/?utm_source=t#top'), pageKey('https://x.com/a'));
 });
+
+test('a bot check (Vercel challenge) is named in the error when no browser may be used', async () => {
+  const server = createServer((req, res) => {
+    res.writeHead(429, { 'content-type': 'text/html', 'x-vercel-mitigated': 'challenge', server: 'Vercel' });
+    res.end('<!doctype html><title>Vercel Security Checkpoint</title>');
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${server.address().port}/`;
+  try {
+    await assert.rejects(scanUrl(url, { pages: 1, render: 'never' }), /HTTP 429.*bot check/);
+    await assert.rejects(scanUrl(url, { pages: 1 }), /HTTP 429.*bot check/);
+  } finally {
+    server.close();
+  }
+});

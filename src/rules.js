@@ -192,7 +192,7 @@ const content = [
       const ms = [
         ...(c.text.match(/\d{1,3}(?:[.,]\d{3})+\s?\+|\d+\s?(?:k|K|bin|B|M|million|milyon)\+|\b\d+\+(?=\s|$)/g) || []),
         ...(c.text.match(/%\s?\d{2,3}(?:[.,]\d)?|\d{2,3}(?:[.,]\d)?\s?%/g) || []),
-        ...(c.text.match(/(?<![\p{L}\d])\d{1,3}\s?(?:x|X|kat)(?![\p{L}])/gu) || []),
+        ...(c.text.match(/(?<![\p{L}\d])\d{1,3}\s?(?:x|X|kat)(?![\p{L}\d])/gu) || []),
       ];
       for (const m of ms) found.push({ m, item: c });
     }
@@ -485,8 +485,10 @@ const language = [
   },
 
   function emDash(ctx) {
-    const found = ctx.C.copy.filter((c) => /—| – /.test(c.text));
-    const n = (ctx.text.match(/—| – /g) || []).length;
+    // in Russian, Ukrainian or Bulgarian the dash is grammar ("Москва — столица"), not a habit
+    const cyrillic = (s) => (s.match(/\p{Script=Cyrillic}/gu) || []).length > (s.match(/\p{L}/gu) || []).length / 2;
+    const found = ctx.C.copy.filter((c) => /—| – /.test(c.text) && !cyrillic(c.text));
+    const n = found.reduce((a, c) => a + (c.text.match(/—| – /g) || []).length, 0);
     if (n < 3 || ctx.per1k(n) <= 5) return null;
     return {
       id: 'em-dash', cat: 'language', pts: Math.min(3, ctx.per1k(n) / 4), effort: 'quick',
@@ -1208,9 +1210,15 @@ const finish = [
       // a mention in typographic quotes (“Lorem ipsum”) is text about placeholders, not one
       return /[“«‘]$|&ldquo;$|&laquo;$/.test(src.slice(Math.max(0, i - 7), i)) && /^[^<\n]{0,4}[”»’]|^[^<\n]{0,4}&rdquo;/.test(src.slice(i + x.match.length, i + x.match.length + 12));
     };
+    // [namespace, ...parts].join(":") and obj[name] are code, not a "[Name]" to fill in
+    const inCode = (x) => {
+      if (!x.match.startsWith('[')) return false;
+      const after = x.m.input.slice(x.m.index + x.match.length, x.m.index + x.match.length + 3);
+      return x.match.includes('...') || /^\s*(?:[.:;)=\]]|\?\.)/.test(after) || /^\[[A-Za-z_$][\w$]*(?:\s*,\s*[A-Za-z_$][\w$]*)+\]$/.test(x.match);
+    };
     for (const [k, re, only] of LX.PLACEHOLDER) {
       if (only === 'page' && ctx.C.kind === 'project') continue;
-      const f = findAll(ctx, new RegExp(re.source, 'gi'), 20, { copyOnly: true }).filter((x) => !inAttr(x)).slice(0, 10);
+      const f = findAll(ctx, new RegExp(re.source, 'gi'), 20, { copyOnly: true }).filter((x) => !inAttr(x) && !inCode(x)).slice(0, 10);
       if (f.length) hits.push({ k, f });
     }
     if (!hits.length) return null;

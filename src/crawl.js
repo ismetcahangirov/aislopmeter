@@ -67,8 +67,8 @@ export function parseRobots(text) {
   };
 }
 
-async function fetchText(url) {
-  try { return (await fetchHtml(url, { timeoutMs: 10000 })).html; } catch { return null; }
+async function fetchText(url, browser = true) {
+  try { return (await fetchHtml(url, { timeoutMs: 10000, browser })).html; } catch { return null; }
 }
 
 /* ---------- sitemap.xml ---------- */
@@ -203,7 +203,7 @@ export async function crawlSite(input, { max = 30, render = 'auto', concurrency 
       started++;
       inFlight++;
       try {
-        const got = await fetchHtml(c.url);
+        const got = await fetchHtml(c.url, { browser: render !== 'never' });
         const k2 = pageKey(got.finalUrl);
         if (k2 !== pageKey(c.url) && results.some((p) => pageKey(p.url) === k2)) { continue; } // redirected to a page we have
         done.add(k2);
